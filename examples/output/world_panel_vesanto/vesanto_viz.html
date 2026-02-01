@@ -1,0 +1,1656 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>World Panel SOM - Vesanto Clustering (Academic View)</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap"
+        rel="stylesheet">
+
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        :root {
+            /* Clean Laboratory Theme */
+            --bg-canvas: #FFFFFF;
+            --bg-card: #FFFFFF;
+            --bg-surface: #F8FAFC;
+            /* Slate-50 */
+            --bg-elevated: #F1F5F9;
+            /* Slate-100 */
+            --bg-hover: #E2E8F0;
+            /* Slate-200 */
+
+            /* Typography */
+            --ink-primary: #0F172A;
+            /* Slate-900 */
+            --ink-secondary: #334155;
+            /* Slate-700 */
+            --ink-subtle: #64748B;
+            /* Slate-500 */
+            --ink-muted: #94A3B8;
+            /* Slate-400 */
+
+            /* Borders */
+            --border-subtle: #E2E8F0;
+            /* Slate-200 */
+            --border-focus: #2563EB;
+            /* Blue-600 */
+
+            /* Brand */
+            --accent-primary: #2563EB;
+            /* Blue-600 */
+            --accent-light: #DBEAFE;
+            /* Blue-100 */
+
+            --font-mono: 'JetBrains Mono', monospace;
+
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-mono);
+            background: var(--bg-canvas);
+            color: var(--ink-primary);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ---- Figure Layout ---- */
+        .figure-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+            background: var(--bg-card);
+            box-shadow: var(--shadow-sm);
+            border-left: 1px solid var(--border-subtle);
+            border-right: 1px solid var(--border-subtle);
+        }
+
+        /* ---- Header: "Figure Caption" Style ---- */
+        header {
+            padding: 24px 32px 16px;
+            border-bottom: 1px solid var(--border-subtle);
+            flex-shrink: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+        }
+
+        h1 {
+            font-family: var(--font-mono);
+            font-weight: 700;
+            font-size: 18px;
+            color: var(--ink-primary);
+            letter-spacing: -0.3px;
+        }
+
+        h1 .subtitle {
+            font-family: var(--font-mono);
+            font-weight: 400;
+            font-size: 12px;
+            color: var(--ink-muted);
+            margin-left: 12px;
+        }
+
+        /* ---- Toolbar ---- */
+        .toolbar {
+            padding: 10px 32px;
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            background: var(--bg-elevated);
+            flex-shrink: 0;
+            font-size: 12px;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .label {
+            font-family: var(--font-mono);
+            font-weight: 500;
+            color: var(--ink-muted);
+            text-transform: uppercase;
+            font-size: 9px;
+            letter-spacing: 1.2px;
+        }
+
+        /* Mode Toggle - Tab Style */
+        .toggle-group {
+            display: flex;
+            border: 1px solid var(--border-subtle);
+            border-radius: 3px;
+            background: white;
+            padding: 2px;
+        }
+
+        .toggle-btn {
+            background: transparent;
+            border: none;
+            padding: 4px 12px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--ink-secondary);
+            cursor: pointer;
+            border-radius: 2px;
+            transition: all 300ms ease;
+        }
+
+        .toggle-btn.active {
+            background: var(--ink-primary);
+            color: white;
+            font-weight: 500;
+        }
+
+        /* Year Buttons - Minimal Blocks */
+        .year-btn {
+            background: white;
+            border: 1px solid var(--border-subtle);
+            color: var(--ink-muted);
+            font-family: var(--font-mono);
+            font-size: 10px;
+            font-weight: 500;
+            padding: 5px 10px;
+            cursor: pointer;
+            transition: all 300ms ease;
+        }
+
+        .year-btn:hover {
+            border-color: var(--ink-subtle);
+            color: var(--ink-primary);
+            background: var(--bg-hover);
+        }
+
+        .year-btn.active {
+            background: var(--accent-primary);
+            color: white;
+            border-color: var(--accent-primary);
+            font-weight: 600;
+        }
+
+        /* Dropdown & Buttons */
+        select {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            padding: 4px 8px;
+            border: 1px solid var(--border-subtle);
+            background: white;
+            min-width: 200px;
+            color: var(--ink-primary);
+        }
+
+        select:focus {
+            border-color: var(--border-focus);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+        }
+
+        .play-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: white;
+            border: 1px solid var(--border-subtle);
+            padding: 4px 12px;
+            font-size: 11px;
+            cursor: pointer;
+            font-family: var(--font-mono);
+            font-weight: 500;
+            color: var(--accent-primary);
+            transition: all 300ms;
+        }
+
+        .play-btn:hover {
+            background: var(--accent-light);
+        }
+
+        /* Stats Bar */
+        .stats-bar {
+            margin-left: auto;
+            display: flex;
+            gap: 16px;
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--ink-muted);
+        }
+
+        .stat-item span {
+            font-weight: 600;
+            color: var(--accent-primary);
+        }
+
+        /* ---- Visualization Surface ---- */
+        .viz-surface {
+            flex: 1;
+            position: relative;
+            background: var(--bg-card);
+            overflow: hidden;
+            cursor: crosshair;
+        }
+
+        /* ---- Tooltip ---- */
+        .tooltip {
+            position: absolute;
+            background: white;
+            border: 1px solid var(--border-subtle);
+            box-shadow: var(--shadow-lg);
+            border-radius: 4px;
+            padding: 0;
+            min-width: 220px;
+            max-width: 320px;
+            font-family: var(--font-mono);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 300ms ease;
+            z-index: 100;
+            transform: translate(10px, 10px);
+        }
+
+        .tooltip.visible {
+            opacity: 1;
+        }
+
+        .tt-header {
+            background: var(--ink-primary);
+            color: white;
+            padding: 10px 14px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 700;
+            display: flex;
+            justify-content: space-between;
+            border-radius: 4px 4px 0 0;
+        }
+
+        .tt-body {
+            padding: 10px 14px;
+            font-size: 11px;
+            color: var(--ink-primary);
+        }
+
+        .tt-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+            border-bottom: 1px dashed var(--border-subtle);
+            padding-bottom: 2px;
+        }
+
+        .tt-row:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        .tt-label {
+            color: var(--ink-secondary);
+        }
+
+        .tt-value {
+            font-family: var(--font-mono);
+            font-weight: 500;
+        }
+
+        .tt-list {
+            margin-top: 8px;
+            border-top: 1px solid var(--border-subtle);
+            padding-top: 6px;
+        }
+
+        .tt-list-header {
+            font-weight: 600;
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        .tt-list-item {
+            display: block;
+            padding-left: 8px;
+            border-left: 2px solid var(--accent-primary);
+            margin-bottom: 2px;
+            color: var(--ink-secondary);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* ---- Main Content Layout ---- */
+        .main-content {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* ---- Left Sidebar ---- */
+        .sidebar {
+            width: 280px;
+            min-width: 280px;
+            background: var(--bg-surface);
+            border-right: 1px solid var(--border-subtle);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sidebar-section-header {
+            padding: 12px 16px 8px;
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sidebar-section-title {
+            font-family: var(--font-mono);
+            font-weight: 500;
+            font-size: 9px;
+            color: var(--ink-muted);
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+        }
+
+        .sidebar-badge {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--accent-primary);
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-subtle);
+            padding: 2px 7px;
+            border-radius: 3px;
+        }
+
+        /* ---- Right Panel (Cluster Legend) ---- */
+        .right-panel {
+            width: 260px;
+            min-width: 260px;
+            background: var(--bg-surface);
+            border-left: 1px solid var(--border-subtle);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .cluster-legend {
+            flex: 1;
+            overflow-y: auto;
+            padding: 4px 0;
+        }
+
+        .cluster-legend::-webkit-scrollbar { width: 6px; }
+        .cluster-legend::-webkit-scrollbar-track { background: var(--bg-surface); }
+        .cluster-legend::-webkit-scrollbar-thumb { background: var(--border-subtle); border-radius: 3px; }
+
+        .cluster-group {
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .cluster-group-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 16px;
+            cursor: pointer;
+            transition: background 300ms ease;
+            user-select: none;
+        }
+
+        .cluster-group-header:hover {
+            background: var(--bg-hover);
+        }
+
+        .cluster-chevron {
+            font-size: 10px;
+            color: var(--ink-muted);
+            transition: transform 200ms;
+            width: 12px;
+            text-align: center;
+        }
+
+        .cluster-chevron.open { transform: rotate(90deg); }
+
+        .cluster-swatch {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            border: 1px solid rgba(0,0,0,0.1);
+            flex-shrink: 0;
+        }
+
+        .cluster-label {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--ink-primary);
+            font-weight: 600;
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .cluster-count {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--ink-muted);
+        }
+
+        .cluster-members {
+            display: none;
+            padding: 2px 0 6px;
+        }
+
+        .cluster-members.open { display: block; }
+
+        .cluster-member {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--ink-secondary);
+            padding: 2px 16px 2px 40px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .cluster-member-code {
+            color: var(--ink-muted);
+            margin-right: 6px;
+        }
+
+        /* Filter Section */
+        .sidebar-actions {
+            display: flex;
+            gap: 6px;
+            padding: 6px 16px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .sidebar-action-btn {
+            background: transparent;
+            border: 1px solid var(--border-subtle);
+            color: var(--ink-secondary);
+            font-family: var(--font-mono);
+            font-size: 9px;
+            padding: 3px 8px;
+            cursor: pointer;
+            border-radius: 2px;
+            transition: all 300ms ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .sidebar-action-btn:hover {
+            border-color: var(--ink-subtle);
+            color: var(--ink-primary);
+            background: var(--bg-hover);
+        }
+
+        .sidebar-search {
+            padding: 8px 16px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .sidebar-search input {
+            width: 100%;
+            background: white;
+            border: 1px solid var(--border-subtle);
+            color: var(--ink-primary);
+            font-family: var(--font-mono);
+            font-size: 12px;
+            padding: 7px 10px;
+            border-radius: 3px;
+            outline: none;
+            transition: border-color 300ms ease;
+        }
+
+        .sidebar-search input::placeholder { color: var(--ink-muted); }
+        .sidebar-search input:focus { border-color: var(--accent-primary); }
+
+        .sidebar-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 4px 0;
+        }
+
+        .sidebar-list::-webkit-scrollbar { width: 6px; }
+        .sidebar-list::-webkit-scrollbar-track { background: var(--bg-surface); }
+        .sidebar-list::-webkit-scrollbar-thumb { background: var(--border-subtle); border-radius: 3px; }
+
+        .continent-group {
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .continent-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            cursor: pointer;
+            transition: background 300ms ease;
+            user-select: none;
+        }
+
+        .continent-header:hover { background: var(--bg-hover); }
+
+        .continent-chevron {
+            font-size: 10px;
+            color: var(--ink-muted);
+            transition: transform 200ms;
+            width: 12px;
+            text-align: center;
+        }
+
+        .continent-chevron.open { transform: rotate(90deg); }
+
+        .continent-cb {
+            width: 14px;
+            height: 14px;
+            accent-color: var(--accent-primary);
+            cursor: pointer;
+        }
+
+        .continent-name {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--ink-primary);
+            flex: 1;
+        }
+
+        .continent-count {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--ink-muted);
+        }
+
+        .country-list { display: none; padding: 0 0 4px; }
+        .country-list.open { display: block; }
+
+        .country-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 16px 4px 36px;
+            cursor: pointer;
+            transition: background 300ms ease;
+            user-select: none;
+        }
+
+        .country-item:hover { background: var(--bg-hover); }
+        .country-item.filtered-out { display: none; }
+
+        .country-cb {
+            width: 13px;
+            height: 13px;
+            accent-color: var(--accent-primary);
+            cursor: pointer;
+        }
+
+        .country-code-label {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--ink-muted);
+            width: 22px;
+            flex-shrink: 0;
+        }
+
+        .country-name-label {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--ink-secondary);
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="figure-container">
+        <header>
+            <h1>World Panel SOM <span class="subtitle">Vesanto Clustering Analysis (1990–2020)</span></h1>
+        </header>
+
+        <div class="toolbar">
+            <div class="control-group">
+                <span class="label">View Mode</span>
+                <div class="toggle-group">
+                    <button class="toggle-btn active" data-mode="snapshot">Snapshot</button>
+                    <button class="toggle-btn" data-mode="trajectory">Trajectory</button>
+                </div>
+            </div>
+
+            <!-- Snapshot Controls -->
+            <div id="snapshot-controls" class="control-group">
+                <span class="label">Year</span>
+                <div id="year-buttons" style="display:flex; gap:2px;"></div>
+            </div>
+
+            <!-- Trajectory Controls -->
+            <div id="trajectory-controls" class="control-group hidden">
+                <span class="label">Country</span>
+                <select id="country-select">
+                    <option value="">Select entity...</option>
+                </select>
+                <button id="play-btn" class="play-btn">
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
+                        <path d="M2 1L9 5L2 9V1Z" />
+                    </svg>
+                    Twirl
+                </button>
+            </div>
+
+            <div id="info-bar" class="stats-bar">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="sidebar" id="sidebar">
+                <div class="sidebar-section-header">
+                    <span class="sidebar-section-title">Filters</span>
+                    <span class="sidebar-badge" id="filter-count"></span>
+                </div>
+                <div class="sidebar-actions">
+                    <button class="sidebar-action-btn" id="btn-select-all">Select All</button>
+                    <button class="sidebar-action-btn" id="btn-select-none">Clear All</button>
+                </div>
+                <div class="sidebar-search">
+                    <input type="text" id="sidebar-search" placeholder="Search countries...">
+                </div>
+                <div class="sidebar-list" id="sidebar-list"></div>
+            </div>
+
+            <div class="viz-surface" id="viz-container">
+                <svg id="hex-svg"></svg>
+            </div>
+
+            <div class="right-panel" id="right-panel">
+                <div class="sidebar-section-header">
+                    <span class="sidebar-section-title">Clusters</span>
+                    <span class="sidebar-badge" id="cluster-badge"></span>
+                </div>
+                <div class="cluster-legend" id="cluster-legend"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tooltip" id="tooltip"></div>
+
+    <script>
+        (async function () {
+
+            /* =================================================================
+               Configuration & Constants (Scientific)
+               ================================================================= */
+            const CONFIG = {
+                hexSize: 22,
+                hexRadius: 22,               // flat-top circumradius = hexSize
+                markerRadius: 3.5,
+                ringRadius: 22 * 0.38,
+                colors: {
+                    inactive: '#F1F5F9',
+                    stroke: '#E2E8F0',
+                    highlight: '#E2E8F0',
+                    boundary: '#1E293B',
+                    // Extended 15-color palette for cluster distinguishability
+                    clusters: [
+                        '#4E79A7', '#F28E2B', '#E15759', '#76B7B2', '#59A14F',
+                        '#EDC948', '#B07AA1', '#FF9DA7', '#9C755F', '#BAB0AC',
+                        '#17BECF', '#D4A373', '#BCBD22', '#E377C2', '#2D6A4F'
+                    ]
+                },
+                years: [1990, 1994, 1998, 2002, 2006, 2010, 2014, 2018, 2020]
+            };
+
+            // Setup Color Scales
+            const clusterColor = d3.scaleOrdinal().range(CONFIG.colors.clusters);
+            // Viridis-like interpolation for time, often preferred in science for perceptal uniformity,
+            // but here we stick to a clear diverging or sequential scale for years map.
+            // Let's use Magma or Plasma for high visibility on white.
+            const timeColor = d3.scaleSequential(d3.interpolateMagma)
+                .domain([2023, 1988]); // Ends lighter/yellow for recent years
+
+            /* =================================================================
+               State Management
+               ================================================================= */
+            const state = {
+                mode: 'snapshot',
+                year: 1990,
+                country: null,
+                animating: false
+            };
+
+            /* =================================================================
+               Continent Mapping
+               ================================================================= */
+            const CONTINENT_MAP = {
+                AO:'Africa',BF:'Africa',BI:'Africa',BJ:'Africa',BW:'Africa',
+                CD:'Africa',CF:'Africa',CG:'Africa',CI:'Africa',CM:'Africa',
+                CV:'Africa',DZ:'Africa',EG:'Africa',ET:'Africa',GA:'Africa',
+                GH:'Africa',GM:'Africa',GN:'Africa',GQ:'Africa',GW:'Africa',
+                KE:'Africa',KM:'Africa',LS:'Africa',LY:'Africa',MA:'Africa',
+                MG:'Africa',ML:'Africa',MR:'Africa',MU:'Africa',MW:'Africa',
+                MZ:'Africa',NE:'Africa',NG:'Africa',RW:'Africa',SC:'Africa',
+                SD:'Africa',SL:'Africa',SN:'Africa',SZ:'Africa',TD:'Africa',
+                TG:'Africa',TN:'Africa',TZ:'Africa',UG:'Africa',ZA:'Africa',
+                ZM:'Africa',ZW:'Africa',
+                AE:'Asia',AM:'Asia',AZ:'Asia',BD:'Asia',BH:'Asia',BN:'Asia',
+                BT:'Asia',CN:'Asia',GE:'Asia',HK:'Asia',ID:'Asia',IL:'Asia',
+                IN:'Asia',IQ:'Asia',IR:'Asia',JO:'Asia',JP:'Asia',KG:'Asia',
+                KH:'Asia',KR:'Asia',KW:'Asia',KZ:'Asia',LA:'Asia',LB:'Asia',
+                LK:'Asia',MN:'Asia',MO:'Asia',MV:'Asia',MY:'Asia',NP:'Asia',
+                OM:'Asia',PH:'Asia',PK:'Asia',PS:'Asia',QA:'Asia',SA:'Asia',
+                SG:'Asia',SY:'Asia',TH:'Asia',TJ:'Asia',TL:'Asia',TM:'Asia',
+                TR:'Asia',UZ:'Asia',VN:'Asia',YE:'Asia',
+                AL:'Europe',AT:'Europe',BA:'Europe',BE:'Europe',BG:'Europe',
+                BY:'Europe',CH:'Europe',CY:'Europe',CZ:'Europe',DE:'Europe',
+                DK:'Europe',EE:'Europe',ES:'Europe',FI:'Europe',FR:'Europe',
+                GB:'Europe',GR:'Europe',HR:'Europe',HU:'Europe',IE:'Europe',
+                IS:'Europe',IT:'Europe',LT:'Europe',LU:'Europe',LV:'Europe',
+                MD:'Europe',ME:'Europe',MK:'Europe',MT:'Europe',NL:'Europe',
+                NO:'Europe',PL:'Europe',PT:'Europe',RO:'Europe',RS:'Europe',
+                RU:'Europe',SE:'Europe',SI:'Europe',SK:'Europe',UA:'Europe',
+                BS:'N. America',BZ:'N. America',CA:'N. America',CR:'N. America',
+                CU:'N. America',DO:'N. America',GT:'N. America',HN:'N. America',
+                HT:'N. America',JM:'N. America',KN:'N. America',MX:'N. America',
+                NI:'N. America',PA:'N. America',PR:'N. America',SV:'N. America',
+                TT:'N. America',US:'N. America',AW:'N. America',BB:'N. America',
+                VC:'N. America',KI:'N. America',
+                AR:'S. America',BO:'S. America',BR:'S. America',CL:'S. America',
+                CO:'S. America',EC:'S. America',GY:'S. America',PE:'S. America',
+                PY:'S. America',SR:'S. America',UY:'S. America',VE:'S. America',
+                AU:'Oceania',FJ:'Oceania',NZ:'Oceania',
+                PG:'Oceania',SB:'Oceania',TO:'Oceania',VU:'Oceania',WS:'Oceania',
+            };
+
+            const CONTINENT_COLORS = {
+                'Africa':      '#E2725B',
+                'Asia':        '#C4A35A',
+                'Europe':      '#6B93D6',
+                'N. America':  '#9B72AA',
+                'S. America':  '#5DADE2',
+                'Oceania':     '#58D68D',
+            };
+
+            const continentOf = code => CONTINENT_MAP[code] || 'Unknown';
+            const continentColor = code => CONTINENT_COLORS[continentOf(code)] || '#666';
+
+            const CLUSTER_NAMES = {
+                1:  'Least Developed',
+                2:  'Lower-Middle Income',
+                3:  'Low Income Agrarian',
+                4:  'Small Vulnerable States',
+                5:  'Resource-Dependent',
+                6:  'Emerging Giants',
+                7:  'High-Income Trade Hubs',
+                8:  'Small Advanced',
+                9:  'Oil & Gas Exporters',
+                10: 'Upper-Middle Emerging',
+                11: 'High-Income Small States',
+                12: 'Advanced Economies',
+                13: 'Middle-Income Transitional',
+                14: 'Southern Middle Income',
+                15: 'Latin American & Emerging',
+            };
+
+            const activeCountries = new Set();
+
+            /* =================================================================
+               Data Storage
+               ================================================================= */
+            const data = {
+                neurons: [],      // flat array
+                neuronMap: new Map(), // "x,y" -> obj
+                snapshots: new Map(), // year -> [entries]
+                trajectories: new Map(), // countryCode -> [entries sorted]
+                eval: new Map(),
+                countries: [],
+
+                // Cache for current view
+                sCluster: new Map(),
+                sCountries: new Map()
+            };
+
+            /* =================================================================
+               Geometry Helpers
+               ================================================================= */
+            function hexToPixel(x, y) {
+                // Flat-topped hex conversion
+                const px = CONFIG.hexSize * 1.5 * x;
+                const py = CONFIG.hexSize * Math.sqrt(3) * (y + 0.5 * (x & 1));
+                return [px, py];
+            }
+
+            const HEX_PATH = (function () {
+                // Flat-top hex: vertices at 0°, 60°, 120°, 180°, 240°, 300°
+                // Matches the offset-column grid layout (hexToPixel)
+                const pts = d3.range(6).map(i => {
+                    const angle = (60 * i) * Math.PI / 180;
+                    return [CONFIG.hexRadius * Math.cos(angle), CONFIG.hexRadius * Math.sin(angle)];
+                });
+                return 'M' + pts.map(p => p.join(',')).join('L') + 'Z';
+            })();
+
+            function getRingOffset(idx, total) {
+                if (total <= 1) return [0, 0];
+                const r = total <= 4 ? CONFIG.ringRadius * 0.55 : CONFIG.ringRadius;
+                const a = (2 * Math.PI * idx) / Math.min(total, 10);
+                return [r * Math.cos(a), r * Math.sin(a)];
+            }
+
+            /* =================================================================
+               Hex Neighbor Offsets (odd-q offset grid)
+               ================================================================= */
+            const NEIGHBORS_EVEN = [[1, 0], [1, -1], [0, 1], [0, -1], [-1, 0], [-1, -1]];
+            const NEIGHBORS_ODD  = [[1, 0], [1, 1],  [0, 1], [0, -1], [-1, 0], [-1, 1]];
+
+            function getNeighborOffsets(x) {
+                return (x & 1) ? NEIGHBORS_ODD : NEIGHBORS_EVEN;
+            }
+
+            /* =================================================================
+               Cluster Boundary Drawing
+               ================================================================= */
+            function drawBoundaries(effectiveCluster) {
+                if (!gBoundary) return;
+                gBoundary.selectAll('*').remove();
+                if (!effectiveCluster || effectiveCluster.size === 0) return;
+
+                const segments = [];
+                const seen = new Set();
+
+                data.neurons.forEach(n => {
+                    const k1 = `${n.x},${n.y}`;
+                    const c1 = effectiveCluster.get(k1);
+                    if (c1 === undefined) return;
+
+                    const offsets = getNeighborOffsets(n.x);
+                    offsets.forEach(([dx, dy]) => {
+                        const nx = n.x + dx;
+                        const ny = n.y + dy;
+                        const k2 = `${nx},${ny}`;
+                        const c2 = effectiveCluster.get(k2);
+
+                        // Boundary: different cluster OR neighbor is inactive/missing
+                        if (c1 === c2) return;
+
+                        // Deduplicate: each edge shared by two hexes
+                        const edgeKey = [k1, k2].sort().join('|');
+                        if (seen.has(edgeKey)) return;
+                        seen.add(edgeKey);
+
+                        const [px1, py1] = hexToPixel(n.x, n.y);
+                        const [px2, py2] = hexToPixel(nx, ny);
+                        const mx = (px1 + px2) / 2;
+                        const my = (py1 + py2) / 2;
+                        const ddx = px2 - px1;
+                        const ddy = py2 - py1;
+                        const dist = Math.sqrt(ddx * ddx + ddy * ddy);
+                        const perpX = -ddy / dist;
+                        const perpY = ddx / dist;
+                        const halfLen = CONFIG.hexRadius * 0.50;
+
+                        segments.push({
+                            x1: mx - perpX * halfLen,
+                            y1: my - perpY * halfLen,
+                            x2: mx + perpX * halfLen,
+                            y2: my + perpY * halfLen,
+                        });
+                    });
+                });
+
+                gBoundary.selectAll('line')
+                    .data(segments)
+                    .join('line')
+                    .attr('x1', d => d.x1).attr('y1', d => d.y1)
+                    .attr('x2', d => d.x2).attr('y2', d => d.y2)
+                    .attr('stroke', CONFIG.colors.boundary)
+                    .attr('stroke-width', 2.5)
+                    .attr('stroke-opacity', 0.45)
+                    .attr('stroke-linecap', 'round')
+                    .style('pointer-events', 'none');
+            }
+
+            /* =================================================================
+               Initialization & Data Loading
+               ================================================================= */
+            async function loadData() {
+                const [neuronsRaw, trajRaw, summaryRaw, evalRaw] = await Promise.all([
+                    d3.csv('raw_data/neuron_weights.csv'),
+                    d3.csv('raw_data/all_trajectories.csv'),
+                    d3.csv('raw_data/country_summary.csv'),
+                    d3.csv('vesanto_evaluation/cluster_evaluation_summary.csv'),
+                ]);
+
+                // Process Neurons
+                neuronsRaw.forEach(d => {
+                    const n = { x: +d.neuron_x, y: +d.neuron_y, hitCount: +d.hit_count };
+                    data.neurons.push(n);
+                    data.neuronMap.set(`${n.x},${n.y}`, n);
+                });
+
+                // Process Trajectories
+                trajRaw.forEach(d => {
+                    const e = {
+                        countryCode: d.country_code,
+                        countryName: d.country_name,
+                        year: +d.snapshot_year,
+                        bmuX: +d.bmu_x,
+                        bmuY: +d.bmu_y,
+                        cluster: +d.cluster,
+                    };
+
+                    if (!data.snapshots.has(e.year)) data.snapshots.set(e.year, []);
+                    data.snapshots.get(e.year).push(e);
+
+                    if (!data.trajectories.has(e.countryCode)) data.trajectories.set(e.countryCode, []);
+                    data.trajectories.get(e.countryCode).push(e);
+                });
+
+                // Sort trajectories by year
+                data.trajectories.forEach(arr => arr.sort((a, b) => a.year - b.year));
+
+                // Process Eval
+                evalRaw.forEach(d => {
+                    data.eval.set(+d.snapshot_year, {
+                        k: +d.global_k,
+                        nCountries: +d.n_countries,
+                        db: +d.snapshot_db_score,
+                        sil: +d.snapshot_sil_score
+                    });
+                });
+
+                // Process Country List
+                data.countries = summaryRaw.map(d => ({
+                    code: d.country_code,
+                    name: d.country_name,
+                    changes: +d.n_cluster_changes
+                })).sort((a, b) => a.name.localeCompare(b.name));
+
+                initInterface();
+                initVis();
+            }
+
+            /* =================================================================
+               Interface Setup
+               ================================================================= */
+            function initInterface() {
+                // Year Buttons
+                const yearContainer = d3.select('#year-buttons');
+                CONFIG.years.forEach(y => {
+                    yearContainer.append('button')
+                        .attr('class', 'year-btn')
+                        .classed('active', y === state.year)
+                        .attr('data-year', y)
+                        .text(y)
+                        .on('click', () => {
+                            if (state.mode === 'snapshot') {
+                                setSnapshot(y);
+                            }
+                        });
+                });
+
+                // Country Select
+                const select = d3.select('#country-select');
+                data.countries.forEach(c => {
+                    select.append('option').attr('value', c.code).text(`${c.name} (${c.code})`);
+                });
+                select.on('change', function () {
+                    if (this.value && state.mode === 'trajectory') {
+                        setTrajectory(this.value);
+                    }
+                });
+
+                // Mode Toggles
+                d3.selectAll('.toggle-btn').on('click', function () {
+                    const newMode = this.dataset.mode;
+                    if (newMode === state.mode) return;
+
+                    // Switch UI
+                    d3.selectAll('.toggle-btn').classed('active', false);
+                    d3.select(this).classed('active', true);
+
+                    state.mode = newMode;
+                    d3.select('#snapshot-controls').classed('hidden', newMode !== 'snapshot');
+                    d3.select('#trajectory-controls').classed('hidden', newMode !== 'trajectory');
+
+                    // Switch Render
+                    if (newMode === 'snapshot') {
+                        setSnapshot(state.year);
+                    } else {
+                        const existingVal = select.property('value');
+                        if (existingVal) setTrajectory(existingVal);
+                        else clearVis();
+                    }
+                });
+
+                // Play
+                d3.select('#play-btn').on('click', playAnimation);
+
+                // Build Sidebar
+                initSidebar();
+            }
+
+            /* =================================================================
+               Sidebar: Continent Legend + Country Filters
+               ================================================================= */
+            function initSidebar() {
+                // Build continent groups from data
+                const allCountryMap = new Map();
+                data.countries.forEach(c => { allCountryMap.set(c.code, c.name); });
+
+                const continentGroups = new Map();
+                Object.keys(CONTINENT_COLORS).forEach(cont => { continentGroups.set(cont, []); });
+                allCountryMap.forEach((name, code) => {
+                    const cont = continentOf(code);
+                    if (continentGroups.has(cont)) {
+                        continentGroups.get(cont).push({ code, name });
+                    }
+                });
+                continentGroups.forEach(countries => {
+                    countries.sort((a, b) => a.name.localeCompare(b.name));
+                });
+
+                // Initialize all countries as active
+                allCountryMap.forEach((name, code) => { activeCountries.add(code); });
+
+                function updateFilterCount() {
+                    d3.select('#filter-count').text(`${activeCountries.size} / ${allCountryMap.size}`);
+                }
+
+                function syncContinent(continent) {
+                    const countries = continentGroups.get(continent) || [];
+                    const activeCount = countries.filter(c => activeCountries.has(c.code)).length;
+                    const cb = sidebarList.select(`.continent-cb[data-continent="${continent}"]`);
+                    cb.property('checked', activeCount === countries.length);
+                    cb.property('indeterminate', activeCount > 0 && activeCount < countries.length);
+                }
+
+                const sidebarList = d3.select('#sidebar-list');
+
+                continentGroups.forEach((countries, continent) => {
+                    if (countries.length === 0) return;
+                    const group = sidebarList.append('div').attr('class', 'continent-group');
+                    const header = group.append('div').attr('class', 'continent-header');
+                    header.append('span').attr('class', 'continent-chevron').text('\u25B8');
+
+                    const cb = header.append('input')
+                        .attr('type', 'checkbox')
+                        .attr('class', 'continent-cb')
+                        .property('checked', true)
+                        .attr('data-continent', continent);
+
+                    header.append('span').attr('class', 'continent-dot')
+                        .style('background', CONTINENT_COLORS[continent]);
+                    header.append('span').attr('class', 'continent-name').text(continent);
+                    header.append('span').attr('class', 'continent-count').text(countries.length);
+
+                    const list = group.append('div').attr('class', 'country-list');
+
+                    countries.forEach(c => {
+                        const item = list.append('div')
+                            .attr('class', 'country-item')
+                            .attr('data-code', c.code)
+                            .attr('data-name', c.name.toLowerCase());
+
+                        const countryCb = item.append('input')
+                            .attr('type', 'checkbox')
+                            .attr('class', 'country-cb')
+                            .property('checked', true)
+                            .attr('data-code', c.code);
+
+                        item.append('span').attr('class', 'country-code-label').text(c.code);
+                        item.append('span').attr('class', 'country-name-label').text(c.name);
+
+                        countryCb.on('change', function (e) {
+                            e.stopPropagation();
+                            if (this.checked) activeCountries.add(c.code);
+                            else activeCountries.delete(c.code);
+                            syncContinent(continent);
+                            updateFilterCount();
+                            if (state.mode === 'snapshot') setSnapshot(state.year);
+                        });
+
+                        item.on('click', function (e) {
+                            if (e.target.tagName === 'INPUT') return;
+                            const el = countryCb.node();
+                            el.checked = !el.checked;
+                            el.dispatchEvent(new Event('change'));
+                        });
+                    });
+
+                    cb.on('change', function (e) {
+                        e.stopPropagation();
+                        const checked = this.checked;
+                        countries.forEach(c => {
+                            if (checked) activeCountries.add(c.code);
+                            else activeCountries.delete(c.code);
+                        });
+                        list.selectAll('.country-cb').property('checked', checked);
+                        updateFilterCount();
+                        if (state.mode === 'snapshot') setSnapshot(state.year);
+                    });
+
+                    header.on('click', function (e) {
+                        if (e.target.tagName === 'INPUT') return;
+                        const chevron = d3.select(this).select('.continent-chevron');
+                        const isOpen = list.classed('open');
+                        list.classed('open', !isOpen);
+                        chevron.classed('open', !isOpen).text(!isOpen ? '\u25BE' : '\u25B8');
+                    });
+                });
+
+                // Search
+                d3.select('#sidebar-search').on('input', function () {
+                    const query = this.value.toLowerCase().trim();
+                    sidebarList.selectAll('.country-item').each(function () {
+                        const item = d3.select(this);
+                        const name = item.attr('data-name');
+                        const code = item.attr('data-code').toLowerCase();
+                        const match = !query || name.includes(query) || code.includes(query);
+                        item.classed('filtered-out', !match);
+                    });
+                    if (query) {
+                        sidebarList.selectAll('.continent-group').each(function () {
+                            const group = d3.select(this);
+                            const hasVisible = group.selectAll('.country-item:not(.filtered-out)').size() > 0;
+                            group.select('.country-list').classed('open', hasVisible);
+                            group.select('.continent-chevron').classed('open', hasVisible)
+                                .text(hasVisible ? '\u25BE' : '\u25B8');
+                        });
+                    }
+                });
+
+                // Select All / Clear All
+                d3.select('#btn-select-all').on('click', function () {
+                    allCountryMap.forEach((name, code) => { activeCountries.add(code); });
+                    sidebarList.selectAll('.country-cb').property('checked', true);
+                    sidebarList.selectAll('.continent-cb').property('checked', true).property('indeterminate', false);
+                    updateFilterCount();
+                    if (state.mode === 'snapshot') setSnapshot(state.year);
+                });
+
+                d3.select('#btn-select-none').on('click', function () {
+                    activeCountries.clear();
+                    sidebarList.selectAll('.country-cb').property('checked', false);
+                    sidebarList.selectAll('.continent-cb').property('checked', false).property('indeterminate', false);
+                    updateFilterCount();
+                    if (state.mode === 'snapshot') setSnapshot(state.year);
+                });
+
+                updateFilterCount();
+            }
+
+            /* =================================================================
+               Update Cluster Legend (Sidebar)
+               ================================================================= */
+            function updateClusterLegend(clusters) {
+                const legend = d3.select('#cluster-legend').html('');
+                d3.select('#cluster-badge').text(`k = ${clusters ? clusters.length : 0}`);
+
+                if (!clusters || clusters.length === 0) return;
+
+                const entries = data.snapshots.get(state.year) || [];
+
+                // Group active countries by cluster
+                const clusterMembers = new Map();
+                clusters.forEach(c => { clusterMembers.set(c, []); });
+                entries.forEach(e => {
+                    if (activeCountries.has(e.countryCode)) {
+                        const members = clusterMembers.get(e.cluster);
+                        if (members) members.push({ code: e.countryCode, name: e.countryName });
+                    }
+                });
+                clusterMembers.forEach(members => {
+                    members.sort((a, b) => a.name.localeCompare(b.name));
+                });
+
+                clusters.forEach(c => {
+                    const members = clusterMembers.get(c) || [];
+                    const group = legend.append('div').attr('class', 'cluster-group');
+
+                    const header = group.append('div').attr('class', 'cluster-group-header');
+                    header.append('span').attr('class', 'cluster-chevron').text('\u25B8');
+                    header.append('div').attr('class', 'cluster-swatch')
+                        .style('background', clusterColor(c));
+                    header.append('span').attr('class', 'cluster-label')
+                        .text(CLUSTER_NAMES[c] || `Cluster ${c}`);
+                    header.append('span').attr('class', 'cluster-count')
+                        .text(members.length);
+
+                    const memberList = group.append('div').attr('class', 'cluster-members');
+                    members.forEach(m => {
+                        const row = memberList.append('div').attr('class', 'cluster-member');
+                        row.append('span').attr('class', 'cluster-member-code').text(m.code);
+                        row.append('span').text(m.name);
+                    });
+
+                    header.on('click', function () {
+                        const chevron = d3.select(this).select('.cluster-chevron');
+                        const isOpen = memberList.classed('open');
+                        memberList.classed('open', !isOpen);
+                        chevron.classed('open', !isOpen).text(!isOpen ? '\u25BE' : '\u25B8');
+                    });
+                });
+            }
+
+            /* =================================================================
+               D3 Visualization Setup
+               ================================================================= */
+            let svg, gMain, gHex, gBoundary, gPath, gMarkers, gLabels;
+
+            function initVis() {
+                // Calculate Bounds
+                let [minX, minY, maxX, maxY] = [Infinity, Infinity, -Infinity, -Infinity];
+                data.neurons.forEach(n => {
+                    const [px, py] = hexToPixel(n.x, n.y);
+                    minX = Math.min(minX, px);
+                    minY = Math.min(minY, py);
+                    maxX = Math.max(maxX, px);
+                    maxY = Math.max(maxY, py);
+                });
+
+                const padding = CONFIG.hexSize * 3;
+                const width = (maxX - minX) + padding * 2;
+                const height = (maxY - minY) + padding * 2;
+                const viewBox = `${minX - padding} ${minY - padding} ${width} ${height}`;
+
+                svg = d3.select('#hex-svg')
+                    .attr('viewBox', viewBox)
+                    .attr('preserveAspectRatio', 'xMidYMid meet');
+
+                // Layers
+                gMain = svg.append('g');
+                gHex = gMain.append('g').attr('class', 'layer-hex');
+                gBoundary = gMain.append('g').attr('class', 'layer-boundary');
+                gPath = gMain.append('g').attr('class', 'layer-path');
+                gMarkers = gMain.append('g').attr('class', 'layer-markers');
+                gLabels = gMain.append('g').attr('class', 'layer-labels');
+
+                // Zoom
+                const zoom = d3.zoom()
+                    .scaleExtent([0.5, 8])
+                    .on('zoom', e => gMain.attr('transform', e.transform));
+                svg.call(zoom);
+
+                // Render Base Hex Grid (Static)
+                gHex.selectAll('.hex')
+                    .data(data.neurons, d => `${d.x},${d.y}`)
+                    .join('path')
+                    .attr('class', 'hex')
+                    .attr('d', HEX_PATH)
+                    .attr('transform', d => {
+                        const [px, py] = hexToPixel(d.x, d.y);
+                        return `translate(${px},${py})`;
+                    })
+                    .attr('fill', CONFIG.colors.inactive)
+                    .attr('stroke', 'white')
+                    .attr('stroke-width', 1)
+                    .on('mouseenter', onHexHover)
+                    .on('mousemove', moveTooltip)
+                    .on('mouseleave', hideTooltip);
+
+                // Initial Render
+                setSnapshot(1990);
+            }
+
+            /* =================================================================
+               Rendering & Logic
+               ================================================================= */
+
+            function updateStats(contentArray) {
+                const bar = d3.select('#info-bar').html('');
+                contentArray.forEach(html => {
+                    bar.append('div')
+                        .attr('class', 'stat-item')
+                        .html(html);
+                });
+            }
+
+            function clearVis() {
+                gHex.selectAll('.hex').transition()
+                    .attr('fill', CONFIG.colors.inactive)
+                    .attr('stroke', 'white')
+                    .attr('stroke-width', 1);
+                if (gBoundary) gBoundary.selectAll('*').remove();
+                gMarkers.selectAll('*').remove();
+                gPath.selectAll('*').remove();
+                gLabels.selectAll('*').remove();
+                updateStats([]);
+                updateClusterLegend(null);
+            }
+
+            // --- Snapshot Mode ---
+            function setSnapshot(year) {
+                state.year = year;
+                const entries = data.snapshots.get(year) || [];
+                const evalInfo = data.eval.get(year);
+
+                // Update Buttons
+                d3.selectAll('.year-btn').classed('active', function () {
+                    return +this.dataset.year === year;
+                });
+
+                // Prepare Lookups
+                data.sCluster.clear();
+                data.sCountries.clear();
+                entries.forEach(d => {
+                    const k = `${d.bmuX},${d.bmuY}`;
+                    data.sCluster.set(k, d.cluster);
+                    if (!data.sCountries.has(k)) data.sCountries.set(k, []);
+                    data.sCountries.get(k).push(d);
+                });
+
+                // 1. Build effective cluster map (only hexes with active countries)
+                const effectiveCluster = new Map();
+                data.sCluster.forEach((c, k) => {
+                    const list = data.sCountries.get(k) || [];
+                    if (list.some(item => activeCountries.has(item.countryCode))) {
+                        effectiveCluster.set(k, c);
+                    }
+                });
+
+                // 2. Color Hexes — cluster fill + matching stroke for solid regions
+                gHex.selectAll('.hex')
+                    .transition().duration(400)
+                    .attr('fill', d => {
+                        const k = `${d.x},${d.y}`;
+                        const c = effectiveCluster.get(k);
+                        return c !== undefined ? clusterColor(c) : CONFIG.colors.inactive;
+                    })
+                    .attr('stroke', d => {
+                        const k = `${d.x},${d.y}`;
+                        const c = effectiveCluster.get(k);
+                        return c !== undefined ? clusterColor(c) : 'white';
+                    })
+                    .attr('stroke-width', d => {
+                        const k = `${d.x},${d.y}`;
+                        return effectiveCluster.has(k) ? 0.5 : 1;
+                    });
+
+                // 3. Draw cluster boundary lines
+                drawBoundaries(effectiveCluster);
+
+                // 4. Render Markers
+                gMarkers.selectAll('*').remove();
+                gPath.selectAll('*').remove();
+                gLabels.selectAll('*').remove();
+
+                const markers = [];
+                data.sCountries.forEach((list, key) => {
+                    const [bx, by] = key.split(',').map(Number);
+                    const [px, py] = hexToPixel(bx, by);
+                    const filtered = list.filter(item => activeCountries.has(item.countryCode));
+                    filtered.forEach((item, i) => {
+                        const [ox, oy] = getRingOffset(i, filtered.length);
+                        markers.push({ ...item, px: px + ox, py: py + oy });
+                    });
+                });
+
+                gMarkers.selectAll('.dot')
+                    .data(markers)
+                    .join('circle')
+                    .attr('class', 'dot')
+                    .attr('cx', d => d.px)
+                    .attr('cy', d => d.py)
+                    .attr('r', CONFIG.markerRadius)
+                    .attr('fill', d => continentColor(d.countryCode))
+                    .attr('stroke', '#fff')
+                    .attr('stroke-width', 1)
+                    .on('mouseenter', onMarkerHover)
+                    .on('mousemove', moveTooltip)
+                    .on('mouseleave', hideTooltip);
+
+                // 3. Update Legend & Stats
+                const clusters = [...new Set(entries.map(d => d.cluster))].sort((a, b) => a - b);
+                updateClusterLegend(clusters);
+
+                const filteredN = entries.filter(e => activeCountries.has(e.countryCode)).length;
+                if (evalInfo) {
+                    updateStats([
+                        `Year: <span>${year}</span>`,
+                        `N: <span>${filteredN} / ${evalInfo.nCountries}</span>`,
+                        `DB-Index: <span>${evalInfo.db.toFixed(3)}</span>`,
+                        `Silhouette: <span>${evalInfo.sil.toFixed(3)}</span>`
+                    ]);
+                }
+            }
+
+            // --- Trajectory Mode ---
+            function setTrajectory(code) {
+                state.country = code;
+                const traj = data.trajectories.get(code);
+                if (!traj) return;
+
+                // Clear boundaries and dim background
+                if (gBoundary) gBoundary.selectAll('*').remove();
+                gHex.selectAll('.hex')
+                    .transition().duration(400)
+                    .attr('fill', CONFIG.colors.inactive)
+                    .attr('stroke', 'white')
+                    .attr('stroke-width', 1);
+
+                // Highlights visited neurons
+                const visited = new Set(traj.map(d => `${d.bmuX},${d.bmuY}`));
+                gHex.selectAll('.hex')
+                    .filter(d => visited.has(`${d.x},${d.y}`))
+                    .transition()
+                    .attr('fill', CONFIG.colors.highlight);
+
+                // Path geometry
+                const pts = traj.map(d => {
+                    const [px, py] = hexToPixel(d.bmuX, d.bmuY);
+                    return { ...d, px, py };
+                });
+
+                // Draw Line
+                gPath.selectAll('*').remove();
+                const lineGen = d3.line()
+                    .x(d => d.px)
+                    .y(d => d.py)
+                    .curve(d3.curveCatmullRom.alpha(0.5));
+
+                gPath.append('path')
+                    .datum(pts)
+                    .attr('d', lineGen)
+                    .attr('fill', 'none')
+                    .attr('stroke', '#1E293B')
+                    .attr('stroke-width', 2)
+                    .attr('stroke-dasharray', '4,4')
+                    .attr('opacity', 0.5);
+
+                // Draw Dots
+                gMarkers.selectAll('*').remove();
+                gMarkers.selectAll('.t-dot')
+                    .data(pts)
+                    .join('circle')
+                    .attr('class', 't-dot')
+                    .attr('cx', d => d.px)
+                    .attr('cy', d => d.py)
+                    .attr('r', 5)
+                    .attr('fill', d => timeColor(d.year))
+                    .attr('stroke', 'white')
+                    .attr('stroke-width', 2)
+                    .on('mouseenter', onMarkerHover) // Reuse same logic
+                    .on('mousemove', moveTooltip)
+                    .on('mouseleave', hideTooltip);
+
+                // Labels (Year)
+                gLabels.selectAll('*').remove();
+                gLabels.selectAll('.t-label')
+                    .data(pts)
+                    .join('text')
+                    .attr('class', 't-label')
+                    .attr('x', d => d.px)
+                    .attr('y', d => d.py - 8)
+                    .attr('text-anchor', 'middle')
+                    .style('font-family', 'var(--font-mono)')
+                    .style('font-size', '10px')
+                    .style('font-weight', 'bold')
+                    .text(d => d.year);
+
+                // Legend & Stats
+                updateClusterLegend(null);
+                const cInfo = data.countries.find(c => c.code === code);
+                updateStats([
+                    `Country: <span>${cInfo.name}</span>`,
+                    `Changes: <span>${cInfo.changes}</span>`,
+                    `Range: <span>${traj[0].year}–${traj[traj.length - 1].year}</span>`
+                ]);
+            }
+
+            function playAnimation() {
+                if (state.animating || !state.country) return;
+                state.animating = true;
+
+                const traj = data.trajectories.get(state.country);
+
+                // Reset visibility
+                d3.selectAll('.t-dot').attr('opacity', 0);
+                d3.selectAll('.t-label').attr('opacity', 0);
+
+                traj.forEach((step, i) => {
+                    setTimeout(() => {
+                        d3.selectAll('.t-dot').filter(d => d.year === step.year)
+                            .transition().duration(300).attr('opacity', 1);
+                        d3.selectAll('.t-label').filter(d => d.year === step.year)
+                            .transition().duration(300).attr('opacity', 1);
+
+                        if (i === traj.length - 1) state.animating = false;
+                    }, i * 600);
+                });
+            }
+
+            /* =================================================================
+               Helpers
+               ================================================================= */
+            function varCss(name) {
+                return getComputedStyle(document.body).getPropertyValue(name).trim();
+            }
+
+            /* =================================================================
+               Tooltips
+               ================================================================= */
+            const tt = d3.select('#tooltip');
+
+            function showTT(html) {
+                tt.html(html).classed('visible', true);
+            }
+
+            function hideTooltip() {
+                tt.classed('visible', false);
+            }
+
+            function moveTooltip(e) {
+                const limitX = window.innerWidth;
+                const limitY = window.innerHeight;
+                // prevent overflow
+                let x = e.pageX + 15;
+                let y = e.pageY + 15;
+
+                if (x + 250 > limitX) x = e.pageX - 260;
+                if (y + 150 > limitY) y = e.pageY - 160;
+
+                tt.style('transform', `translate(${x}px, ${y}px)`);
+            }
+
+            function onHexHover(e, d) {
+                const k = `${d.x},${d.y}`;
+                const cluster = (state.mode === 'snapshot') ? data.sCluster.get(k) : null;
+                const countries = (state.mode === 'snapshot') ? data.sCountries.get(k) : null;
+
+                // Build Reference Card HTML
+                let html = `
+            <div class="tt-header">
+                <span>Neuron Node</span>
+                <span>${d.x}, ${d.y}</span>
+            </div>
+            <div class="tt-body">
+                <div class="tt-row">
+                    <span class="tt-label">Hit Count</span>
+                    <span class="tt-value">${d.hitCount}</span>
+                </div>
+        `;
+
+                if (cluster !== undefined && cluster !== null) {
+                    html += `
+                <div class="tt-row">
+                    <span class="tt-label">Cluster</span>
+                    <span class="tt-value" style="color:${clusterColor(cluster)}">${CLUSTER_NAMES[cluster] || cluster}</span>
+                </div>
+            `;
+                }
+
+                if (countries && countries.length > 0) {
+                    html += `<div class="tt-list">
+                <span class="tt-list-header">Occupants (${countries.length})</span>`;
+                    const limit = countries.slice(0, 8);
+                    limit.forEach(c => {
+                        html += `<span class="tt-list-item">${c.countryName}</span>`;
+                    });
+                    if (countries.length > 8) {
+                        html += `<span class="tt-list-item" style="font-style:italic">...and ${countries.length - 8} more</span>`;
+                    }
+                    html += `</div>`;
+                }
+
+                html += `</div>`;
+                showTT(html);
+            }
+
+            function onMarkerHover(e, d) {
+                let html = `
+            <div class="tt-header">
+                <span>${d.countryName}</span>
+                <span>${d.countryCode}</span>
+            </div>
+            <div class="tt-body">
+                <div class="tt-row">
+                    <span class="tt-label">Year</span>
+                    <span class="tt-value">${d.year}</span>
+                </div>
+                <div class="tt-row">
+                    <span class="tt-label">Cluster</span>
+                    <span class="tt-value" style="color:${clusterColor(d.cluster)}">${CLUSTER_NAMES[d.cluster] || d.cluster}</span>
+                </div>
+                <div class="tt-row">
+                    <span class="tt-label">Coordinates</span>
+                    <span class="tt-value">(${d.bmuX}, ${d.bmuY})</span>
+                </div>
+            </div>
+        `;
+                showTT(html);
+                e.stopPropagation(); // Don't trigger hex hover
+            }
+
+            // Run
+            loadData();
+
+        })();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>World Panel SOM - Constrained Ward (k=7)</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        :root {
+            --bg-canvas:      #FFFFFF;
+            --bg-card:        #FFFFFF;
+            --bg-surface:     #F8FAFC;
+            --bg-elevated:    #F1F5F9;
+            --bg-hover:       #E2E8F0;
+            --ink-primary:    #1E293B;
+            --ink-secondary:  #475569;
+            --ink-subtle:     #64748B;
+            --ink-muted:      #64748B;
+            --border-subtle:  #E2E8F0;
+            --border-focus:   #2563EB;
+            --accent-primary: #2563EB;
+            --accent-light:   #DBEAFE;
+            --font-mono:      'JetBrains Mono', monospace;
+            --shadow-sm:      0 1px 2px 0 rgba(0,0,0,0.05);
+            --shadow-lg:      0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--font-mono);
+            background: var(--bg-canvas);
+            color: var(--ink-primary);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .figure-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+            background: var(--bg-card);
+            box-shadow: var(--shadow-sm);
+            border-left: 1px solid var(--border-subtle);
+            border-right: 1px solid var(--border-subtle);
+        }
+
+        header {
+            padding: 24px 32px 16px;
+            border-bottom: 1px solid var(--border-subtle);
+            flex-shrink: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+        }
+
+        h1 {
+            font-family: var(--font-mono);
+            font-weight: 700;
+            font-size: 18px;
+            color: var(--ink-primary);
+            letter-spacing: -0.3px;
+        }
+
+        h1 .subtitle {
+            font-family: var(--font-mono);
+            font-weight: 400;
+            font-size: 12px;
+            color: var(--ink-muted);
+            margin-left: 12px;
+        }
+
+        .toolbar {
+            padding: 10px 32px;
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            background: var(--bg-elevated);
+            flex-shrink: 0;
+            font-size: 12px;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .label {
+            font-family: var(--font-mono);
+            font-weight: 500;
+            color: var(--ink-muted);
+            text-transform: uppercase;
+            font-size: 9px;
+            letter-spacing: 1.2px;
+        }
+
+        .year-btn {
+            background: white;
+            border: 1px solid var(--border-subtle);
+            color: var(--ink-muted);
+            font-family: var(--font-mono);
+            font-size: 10px;
+            font-weight: 500;
+            padding: 5px 10px;
+            cursor: pointer;
+            transition: all 300ms ease;
+        }
+
+        .year-btn:hover {
+            border-color: var(--ink-subtle);
+            color: var(--ink-primary);
+            background: var(--bg-hover);
+        }
+
+        .year-btn.active {
+            background: var(--accent-primary);
+            color: white;
+            border-color: var(--accent-primary);
+            font-weight: 600;
+        }
+
+        .stats-bar {
+            margin-left: auto;
+            display: flex;
+            gap: 16px;
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--ink-muted);
+        }
+
+        .stat-item span {
+            font-weight: 600;
+            color: var(--accent-primary);
+        }
+
+        .viz-surface {
+            flex: 1;
+            position: relative;
+            background: var(--bg-card);
+            overflow: hidden;
+            cursor: crosshair;
+        }
+
+        .viz-surface svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Footer / Legend */
+        .footer {
+            padding: 12px 32px;
+            border-top: 1px solid var(--border-subtle);
+            background: var(--bg-elevated);
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+
+        .legend-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .legend-title {
+            font-weight: 600;
+            font-family: var(--font-mono);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 9px;
+            color: var(--ink-muted);
+            margin-right: 4px;
+        }
+
+        .legend-items {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .legend-entry {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+            color: var(--ink-secondary);
+        }
+
+        .swatch-square {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .swatch-circle {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            border: 1.5px solid white;
+            box-shadow: 0 0 0 1px rgba(0,0,0,0.15);
+        }
+
+        .legend-sep {
+            width: 1px;
+            height: 20px;
+            background: var(--border-subtle);
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: absolute;
+            background: white;
+            border: 1px solid var(--border-subtle);
+            box-shadow: var(--shadow-lg);
+            border-radius: 4px;
+            padding: 0;
+            min-width: 220px;
+            max-width: 320px;
+            font-family: var(--font-mono);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 300ms ease;
+            z-index: 100;
+            transform: translate(10px, 10px);
+        }
+
+        .tooltip.visible { opacity: 1; }
+
+        .tt-header {
+            background: var(--ink-primary);
+            color: white;
+            padding: 10px 14px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 700;
+            display: flex;
+            justify-content: space-between;
+            border-radius: 4px 4px 0 0;
+        }
+
+        .tt-body {
+            padding: 10px 14px;
+            font-size: 11px;
+            color: var(--ink-primary);
+        }
+
+        .tt-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+            border-bottom: 1px dashed var(--border-subtle);
+            padding-bottom: 2px;
+        }
+
+        .tt-row:last-child { border-bottom: none; margin-bottom: 0; }
+        .tt-label { color: var(--ink-secondary); }
+        .tt-value { font-family: var(--font-mono); font-weight: 500; }
+
+        .tt-list {
+            margin-top: 8px;
+            border-top: 1px solid var(--border-subtle);
+            padding-top: 6px;
+        }
+
+        .tt-list-header {
+            font-weight: 600;
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        .tt-list-item {
+            display: block;
+            padding-left: 8px;
+            border-left: 2px solid var(--accent-primary);
+            margin-bottom: 2px;
+            color: var(--ink-secondary);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="figure-container">
+        <header>
+            <h1>World Panel SOM <span class="subtitle">Constrained Ward Clustering, k = 7 (1990-2020)</span></h1>
+        </header>
+
+        <div class="toolbar">
+            <div class="control-group">
+                <span class="label">Year</span>
+                <div id="year-buttons" style="display:flex; gap:2px;"></div>
+            </div>
+
+            <div id="info-bar" class="stats-bar"></div>
+        </div>
+
+        <div class="viz-surface" id="viz-container">
+            <svg id="hex-svg"></svg>
+        </div>
+
+        <div class="footer" id="footer-legend"></div>
+    </div>
+
+    <div class="tooltip" id="tooltip"></div>
+
+    <script>
+    (async function () {
+
+        /* =================================================================
+           Configuration
+           ================================================================= */
+        const CONFIG = {
+            hexSize: 22,
+            hexRadius: 22 / Math.sqrt(3),
+            markerRadius: 3.5,
+            ringRadius: (22 / Math.sqrt(3)) * 0.45,
+            years: [1990, 1994, 1998, 2002, 2006, 2010, 2014, 2018, 2020],
+            clusterPalette: [
+                '#4E79A7', '#F28E2B', '#E15759', '#76B7B2', '#59A14F',
+                '#EDC948', '#B07AA1', '#FF9DA7', '#9C755F', '#BAB0AC'
+            ],
+        };
+
+        const clusterColor = d3.scaleOrdinal().range(CONFIG.clusterPalette);
+
+        /* =================================================================
+           Continent Mapping (ISO 2-letter -> continent)
+           ================================================================= */
+        const CONTINENT_MAP = {
+            AO:'Africa',BF:'Africa',BI:'Africa',BJ:'Africa',BW:'Africa',
+            CD:'Africa',CF:'Africa',CG:'Africa',CI:'Africa',CM:'Africa',
+            CV:'Africa',DZ:'Africa',EG:'Africa',ET:'Africa',GA:'Africa',
+            GH:'Africa',GM:'Africa',GN:'Africa',GQ:'Africa',GW:'Africa',
+            KE:'Africa',KM:'Africa',LS:'Africa',LY:'Africa',MA:'Africa',
+            MG:'Africa',ML:'Africa',MR:'Africa',MU:'Africa',MW:'Africa',
+            MZ:'Africa',NE:'Africa',NG:'Africa',RW:'Africa',SC:'Africa',
+            SD:'Africa',SL:'Africa',SN:'Africa',SZ:'Africa',TD:'Africa',
+            TG:'Africa',TN:'Africa',TZ:'Africa',UG:'Africa',ZA:'Africa',
+            ZM:'Africa',ZW:'Africa',
+            AE:'Asia',AM:'Asia',AZ:'Asia',BD:'Asia',BH:'Asia',BN:'Asia',
+            BT:'Asia',CN:'Asia',GE:'Asia',HK:'Asia',ID:'Asia',IL:'Asia',
+            IN:'Asia',IQ:'Asia',IR:'Asia',JO:'Asia',JP:'Asia',KG:'Asia',
+            KH:'Asia',KR:'Asia',KW:'Asia',KZ:'Asia',LA:'Asia',LB:'Asia',
+            LK:'Asia',MN:'Asia',MO:'Asia',MV:'Asia',MY:'Asia',NP:'Asia',
+            OM:'Asia',PH:'Asia',PK:'Asia',PS:'Asia',QA:'Asia',SA:'Asia',
+            SG:'Asia',SY:'Asia',TH:'Asia',TJ:'Asia',TL:'Asia',TM:'Asia',
+            TR:'Asia',UZ:'Asia',VN:'Asia',YE:'Asia',
+            AL:'Europe',AT:'Europe',BA:'Europe',BE:'Europe',BG:'Europe',
+            BY:'Europe',CH:'Europe',CY:'Europe',CZ:'Europe',DE:'Europe',
+            DK:'Europe',EE:'Europe',ES:'Europe',FI:'Europe',FR:'Europe',
+            GB:'Europe',GR:'Europe',HR:'Europe',HU:'Europe',IE:'Europe',
+            IS:'Europe',IT:'Europe',LT:'Europe',LU:'Europe',LV:'Europe',
+            MD:'Europe',ME:'Europe',MK:'Europe',MT:'Europe',NL:'Europe',
+            NO:'Europe',PL:'Europe',PT:'Europe',RO:'Europe',RS:'Europe',
+            RU:'Europe',SE:'Europe',SI:'Europe',SK:'Europe',UA:'Europe',
+            BS:'N. America',BZ:'N. America',CA:'N. America',CR:'N. America',
+            CU:'N. America',DO:'N. America',GT:'N. America',HN:'N. America',
+            HT:'N. America',JM:'N. America',KN:'N. America',MX:'N. America',
+            NI:'N. America',PA:'N. America',PR:'N. America',SV:'N. America',
+            TT:'N. America',US:'N. America',AW:'N. America',BB:'N. America',
+            VC:'N. America',KI:'N. America',
+            AR:'S. America',BO:'S. America',BR:'S. America',CL:'S. America',
+            CO:'S. America',EC:'S. America',GY:'S. America',PE:'S. America',
+            PY:'S. America',SR:'S. America',UY:'S. America',VE:'S. America',
+            AU:'Oceania',FJ:'Oceania',NZ:'Oceania',
+            PG:'Oceania',SB:'Oceania',TO:'Oceania',VU:'Oceania',WS:'Oceania',
+        };
+
+        const CONTINENT_COLORS = {
+            'Africa':      '#e6550d',
+            'Asia':        '#e7298a',
+            'Europe':      '#1b9e77',
+            'N. America':  '#7570b3',
+            'S. America':  '#d95f02',
+            'Oceania':     '#66a61e',
+        };
+
+        function continentOf(code) {
+            return CONTINENT_MAP[code] || 'Unknown';
+        }
+
+        function continentColor(code) {
+            return CONTINENT_COLORS[continentOf(code)] || '#999999';
+        }
+
+        /* =================================================================
+           State
+           ================================================================= */
+        let currentYear = 1990;
+
+        /* =================================================================
+           Data
+           ================================================================= */
+        const neurons = [];
+        const neuronMap = new Map();
+        const cwClusterMap = new Map();   // "x,y" -> constrained Ward cluster (static)
+        const snapshots = new Map();      // year -> [entry]
+        const evalData = new Map();
+
+        /* =================================================================
+           Geometry
+           ================================================================= */
+        function hexToPixel(x, y) {
+            return [
+                CONFIG.hexSize * 1.5 * x,
+                CONFIG.hexSize * Math.sqrt(3) * (y + 0.5 * (x & 1))
+            ];
+        }
+
+        const HEX_PATH = (() => {
+            const pts = d3.range(6).map(i => {
+                const a = (60 * i + 30) * Math.PI / 180;
+                return [CONFIG.hexRadius * Math.cos(a), CONFIG.hexRadius * Math.sin(a)];
+            });
+            return 'M' + pts.map(p => p.join(',')).join('L') + 'Z';
+        })();
+
+        function ringOffset(idx, total) {
+            if (total <= 1) return [0, 0];
+            const r = total <= 4 ? CONFIG.ringRadius * 0.55 : CONFIG.ringRadius;
+            const a = (2 * Math.PI * idx) / Math.min(total, 10);
+            return [r * Math.cos(a), r * Math.sin(a)];
+        }
+
+        /* =================================================================
+           Load Data
+           ================================================================= */
+        const [neuronsRaw, cwRaw, trajRaw, evalRaw] = await Promise.all([
+            d3.csv('raw_data/neuron_weights.csv'),
+            d3.csv('raw_data/constrained_ward_clusters.csv'),
+            d3.csv('raw_data/all_trajectories.csv'),
+            d3.csv('vesanto_evaluation/cluster_evaluation_summary.csv'),
+        ]);
+
+        // Neurons
+        neuronsRaw.forEach(d => {
+            const n = { x: +d.neuron_x, y: +d.neuron_y, hitCount: +d.hit_count };
+            neurons.push(n);
+            neuronMap.set(`${n.x},${n.y}`, n);
+        });
+
+        // Constrained Ward clusters (static, all neurons)
+        cwRaw.forEach(d => {
+            cwClusterMap.set(`${d.neuron_x},${d.neuron_y}`, +d.cw_cluster);
+        });
+
+        // Trajectories -> snapshots
+        trajRaw.forEach(d => {
+            const e = {
+                countryCode: d.country_code,
+                countryName: d.country_name,
+                year: +d.snapshot_year,
+                bmuX: +d.bmu_x,
+                bmuY: +d.bmu_y,
+                vesantoCluster: +d.cluster,
+            };
+            if (!snapshots.has(e.year)) snapshots.set(e.year, []);
+            snapshots.get(e.year).push(e);
+        });
+
+        // Evaluation
+        evalRaw.forEach(d => {
+            evalData.set(+d.snapshot_year, {
+                nCountries: +d.n_countries,
+                nActive: +d.n_active_neurons,
+                db: +d.snapshot_db_score,
+                sil: +d.snapshot_sil_score,
+            });
+        });
+
+        // All unique CW clusters
+        const allClusters = [...new Set(cwClusterMap.values())].sort((a, b) => a - b);
+
+        /* =================================================================
+           SVG Setup
+           ================================================================= */
+        let svg, gMain, gHex, gMarkers;
+
+        (function initVis() {
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            neurons.forEach(n => {
+                const [px, py] = hexToPixel(n.x, n.y);
+                minX = Math.min(minX, px);
+                minY = Math.min(minY, py);
+                maxX = Math.max(maxX, px);
+                maxY = Math.max(maxY, py);
+            });
+
+            const pad = CONFIG.hexSize * 3;
+            const vb = `${minX - pad} ${minY - pad} ${(maxX - minX) + pad * 2} ${(maxY - minY) + pad * 2}`;
+
+            svg = d3.select('#hex-svg')
+                .attr('viewBox', vb)
+                .attr('preserveAspectRatio', 'xMidYMid meet');
+
+            gMain = svg.append('g');
+            gHex = gMain.append('g').attr('class', 'layer-hex');
+            gMarkers = gMain.append('g').attr('class', 'layer-markers');
+
+            svg.call(d3.zoom().scaleExtent([0.5, 8]).on('zoom', e => gMain.attr('transform', e.transform)));
+
+            // Render hex grid (once)
+            gHex.selectAll('.hex')
+                .data(neurons, d => `${d.x},${d.y}`)
+                .join('path')
+                .attr('class', 'hex')
+                .attr('d', HEX_PATH)
+                .attr('transform', d => {
+                    const [px, py] = hexToPixel(d.x, d.y);
+                    return `translate(${px},${py})`;
+                })
+                .attr('fill', d => {
+                    const c = cwClusterMap.get(`${d.x},${d.y}`);
+                    return c != null ? clusterColor(c) : '#F1F5F9';
+                })
+                .attr('fill-opacity', 0.30)
+                .attr('stroke', 'white')
+                .attr('stroke-width', 1.5)
+                .on('mouseenter', onHexHover)
+                .on('mousemove', moveTooltip)
+                .on('mouseleave', hideTooltip);
+        })();
+
+        /* =================================================================
+           Year Buttons
+           ================================================================= */
+        const yearContainer = d3.select('#year-buttons');
+        CONFIG.years.forEach(y => {
+            yearContainer.append('button')
+                .attr('class', 'year-btn')
+                .classed('active', y === currentYear)
+                .attr('data-year', y)
+                .text(y)
+                .on('click', () => renderSnapshot(y));
+        });
+
+        /* =================================================================
+           Render Snapshot
+           ================================================================= */
+        function renderSnapshot(year) {
+            currentYear = year;
+            const entries = snapshots.get(year) || [];
+            const info = evalData.get(year);
+
+            // Active neurons for this year
+            const activeSet = new Set();
+            const neuronCountries = new Map();
+            entries.forEach(d => {
+                const k = `${d.bmuX},${d.bmuY}`;
+                activeSet.add(k);
+                if (!neuronCountries.has(k)) neuronCountries.set(k, []);
+                neuronCountries.get(k).push(d);
+            });
+
+            // Update hex opacity: active=0.85, inactive=0.30
+            gHex.selectAll('.hex')
+                .transition().duration(400)
+                .attr('fill-opacity', d => activeSet.has(`${d.x},${d.y}`) ? 0.85 : 0.30);
+
+            // Country markers colored by continent
+            const markers = [];
+            neuronCountries.forEach((countries, key) => {
+                const [bx, by] = key.split(',').map(Number);
+                const [px, py] = hexToPixel(bx, by);
+                countries.forEach((c, i) => {
+                    const [ox, oy] = ringOffset(i, countries.length);
+                    markers.push({ ...c, px: px + ox, py: py + oy });
+                });
+            });
+
+            gMarkers.selectAll('.dot')
+                .data(markers, d => d.countryCode)
+                .join(
+                    enter => enter.append('circle')
+                        .attr('class', 'dot')
+                        .attr('r', 0)
+                        .attr('cx', d => d.px)
+                        .attr('cy', d => d.py)
+                        .attr('fill', d => continentColor(d.countryCode))
+                        .attr('stroke', 'white')
+                        .attr('stroke-width', 1.2)
+                        .on('mouseenter', onMarkerHover)
+                        .on('mousemove', moveTooltip)
+                        .on('mouseleave', hideTooltip)
+                        .call(e => e.transition().duration(300).attr('r', CONFIG.markerRadius)),
+                    update => update.transition().duration(400)
+                        .attr('cx', d => d.px)
+                        .attr('cy', d => d.py)
+                        .attr('fill', d => continentColor(d.countryCode)),
+                    exit => exit.transition().duration(200).attr('r', 0).remove()
+                );
+
+            // Year buttons
+            d3.selectAll('.year-btn').classed('active', function () {
+                return +this.dataset.year === year;
+            });
+
+            // Stats
+            const nActive = activeSet.size;
+            const statsHtml = [
+                `Year: <span>${year}</span>`,
+                `k: <span>7 (Ward)</span>`,
+                `N: <span>${entries.length}</span>`,
+                `Active: <span>${nActive} / ${neurons.length}</span>`,
+            ];
+            if (info) {
+                statsHtml.push(`DB: <span>${info.db.toFixed(3)}</span>`);
+                statsHtml.push(`Sil: <span>${info.sil.toFixed(3)}</span>`);
+            }
+
+            const bar = d3.select('#info-bar').html('');
+            statsHtml.forEach(h => bar.append('div').attr('class', 'stat-item').html(h));
+
+            // Legend
+            updateLegend();
+        }
+
+        /* =================================================================
+           Legend
+           ================================================================= */
+        function updateLegend() {
+            const el = d3.select('#footer-legend').html('');
+
+            // Cluster legend (squares)
+            const clSec = el.append('div').attr('class', 'legend-section');
+            clSec.append('span').attr('class', 'legend-title').text('Ward Clusters:');
+            const clItems = clSec.append('div').attr('class', 'legend-items');
+            allClusters.forEach(c => {
+                const entry = clItems.append('span').attr('class', 'legend-entry');
+                entry.append('span').attr('class', 'swatch-square')
+                    .style('background', clusterColor(c));
+                entry.append('span').text(c);
+            });
+
+            // Separator
+            el.append('div').attr('class', 'legend-sep');
+
+            // Continent legend (circles)
+            const ctSec = el.append('div').attr('class', 'legend-section');
+            ctSec.append('span').attr('class', 'legend-title').text('Continents:');
+            const ctItems = ctSec.append('div').attr('class', 'legend-items');
+            Object.entries(CONTINENT_COLORS).forEach(([name, color]) => {
+                const entry = ctItems.append('span').attr('class', 'legend-entry');
+                entry.append('span').attr('class', 'swatch-circle')
+                    .style('background', color);
+                entry.append('span').text(name);
+            });
+        }
+
+        /* =================================================================
+           Tooltips
+           ================================================================= */
+        const tt = d3.select('#tooltip');
+
+        function hideTooltip() { tt.classed('visible', false); }
+
+        function moveTooltip(e) {
+            let x = e.pageX + 15;
+            let y = e.pageY + 15;
+            if (x + 260 > window.innerWidth) x = e.pageX - 270;
+            if (y + 160 > window.innerHeight) y = e.pageY - 170;
+            tt.style('transform', `translate(${x}px, ${y}px)`);
+        }
+
+        function onHexHover(e, d) {
+            const k = `${d.x},${d.y}`;
+            const cwc = cwClusterMap.get(k);
+            const entries = snapshots.get(currentYear) || [];
+            const countries = entries.filter(c => c.bmuX === d.x && c.bmuY === d.y);
+            const isActive = countries.length > 0;
+
+            let html = `
+                <div class="tt-header">
+                    <span>Neuron</span>
+                    <span>(${d.x}, ${d.y})</span>
+                </div>
+                <div class="tt-body">
+                    <div class="tt-row">
+                        <span class="tt-label">Ward Cluster</span>
+                        <span class="tt-value" style="color:${cwc != null ? clusterColor(cwc) : '#999'}">#${cwc != null ? cwc : '?'}</span>
+                    </div>
+                    <div class="tt-row">
+                        <span class="tt-label">Hit Count</span>
+                        <span class="tt-value">${d.hitCount}</span>
+                    </div>
+                    <div class="tt-row">
+                        <span class="tt-label">Status (${currentYear})</span>
+                        <span class="tt-value">${isActive ? 'Active' : 'Inactive'}</span>
+                    </div>`;
+
+            if (countries.length > 0) {
+                html += `<div class="tt-list">
+                    <span class="tt-list-header">Countries (${countries.length})</span>`;
+                countries.slice(0, 8).forEach(c => {
+                    const cont = continentOf(c.countryCode);
+                    html += `<span class="tt-list-item">
+                        <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${continentColor(c.countryCode)};margin-right:4px;vertical-align:middle;"></span>
+                        ${c.countryName}
+                    </span>`;
+                });
+                if (countries.length > 8) {
+                    html += `<span class="tt-list-item" style="font-style:italic">&hellip;and ${countries.length - 8} more</span>`;
+                }
+                html += `</div>`;
+            }
+
+            html += `</div>`;
+            tt.html(html).classed('visible', true);
+        }
+
+        function onMarkerHover(e, d) {
+            const cont = continentOf(d.countryCode);
+            const cwc = cwClusterMap.get(`${d.bmuX},${d.bmuY}`);
+
+            const html = `
+                <div class="tt-header">
+                    <span>${d.countryName}</span>
+                    <span>${d.countryCode}</span>
+                </div>
+                <div class="tt-body">
+                    <div class="tt-row">
+                        <span class="tt-label">Continent</span>
+                        <span class="tt-value" style="color:${continentColor(d.countryCode)}">${cont}</span>
+                    </div>
+                    <div class="tt-row">
+                        <span class="tt-label">Ward Cluster</span>
+                        <span class="tt-value" style="color:${cwc != null ? clusterColor(cwc) : '#999'}">#${cwc}</span>
+                    </div>
+                    <div class="tt-row">
+                        <span class="tt-label">Vesanto Cluster</span>
+                        <span class="tt-value">#${d.vesantoCluster}</span>
+                    </div>
+                    <div class="tt-row">
+                        <span class="tt-label">BMU</span>
+                        <span class="tt-value">(${d.bmuX}, ${d.bmuY})</span>
+                    </div>
+                </div>`;
+            tt.html(html).classed('visible', true);
+            e.stopPropagation();
+        }
+
+        /* =================================================================
+           Initialize
+           ================================================================= */
+        renderSnapshot(1990);
+
+    })();
+    </script>
+</body>
+
+</html>

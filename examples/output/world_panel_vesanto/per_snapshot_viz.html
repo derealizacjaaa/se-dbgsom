@@ -1,0 +1,2330 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>World Panel SOM &mdash; Per-Snapshot Vesanto Clustering (1990&ndash;2020)</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        :root {
+            --bg-deep:       #FFFFFF;
+            --bg-surface:    #F8FAFC;
+            --bg-elevated:   #F1F5F9;
+            --bg-hover:      #E2E8F0;
+            --border:        #E2E8F0;
+            --border-accent: #CBD5E1;
+            --ink-primary:   #1E293B;
+            --ink-secondary: #475569;
+            --ink-muted:     #64748B;
+            --ink-faint:     #94A3B8;
+            --accent-gold:   #2563EB;
+            --accent-blue:   #2563EB;
+            --font-display:  'JetBrains Mono', monospace;
+            --font-body:     'JetBrains Mono', monospace;
+            --font-mono:     'JetBrains Mono', monospace;
+            --shadow-sm:     0 1px 2px 0 rgba(0,0,0,0.05);
+            --shadow-lg:     0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
+        }
+
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--font-body);
+            background: var(--bg-deep);
+            color: var(--ink-primary);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .figure-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            max-width: 1860px;
+            margin: 0 auto;
+            width: 100%;
+            background: var(--bg-surface);
+            border-left: 1px solid var(--border);
+            border-right: 1px solid var(--border);
+        }
+
+        /* ---- Header ---- */
+        header {
+            padding: 20px 32px 14px;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-surface);
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            flex-shrink: 0;
+        }
+
+        .title-block h1 {
+            font-family: var(--font-mono);
+            font-weight: 700;
+            font-size: 20px;
+            color: var(--ink-primary);
+            letter-spacing: -0.3px;
+            line-height: 1.1;
+        }
+
+        .title-block h1 .fig-num {
+            color: var(--accent-gold);
+            font-weight: 600;
+            font-size: 13px;
+            margin-right: 6px;
+            vertical-align: 2px;
+        }
+
+        .subtitle {
+            font-family: var(--font-mono);
+            font-weight: 400;
+            font-size: 10px;
+            color: var(--ink-muted);
+            margin-top: 4px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .header-badge {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--ink-muted);
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            padding: 4px 10px;
+            border-radius: 3px;
+            white-space: nowrap;
+        }
+
+        /* ---- Toolbar ---- */
+        .toolbar {
+            padding: 10px 32px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            background: var(--bg-elevated);
+            flex-shrink: 0;
+            flex-wrap: wrap;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .label {
+            font-family: var(--font-mono);
+            font-weight: 500;
+            color: var(--ink-muted);
+            text-transform: uppercase;
+            font-size: 9px;
+            letter-spacing: 1.2px;
+        }
+
+        .year-btn {
+            background: white;
+            border: 1px solid var(--border);
+            color: var(--ink-muted);
+            font-family: var(--font-mono);
+            font-size: 10px;
+            font-weight: 500;
+            padding: 5px 10px;
+            cursor: pointer;
+            transition: all 300ms ease;
+            border-radius: 2px;
+        }
+
+        .year-btn:hover {
+            border-color: var(--ink-muted);
+            color: var(--ink-primary);
+            background: var(--bg-hover);
+        }
+
+        .year-btn.active {
+            background: var(--accent-gold);
+            color: white;
+            border-color: var(--accent-gold);
+            font-weight: 600;
+        }
+
+        .cont-btn {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: transparent;
+            border: 1px solid var(--border);
+            padding: 4px 9px;
+            font-family: var(--font-body);
+            font-size: 10px;
+            font-weight: 500;
+            color: var(--ink-secondary);
+            cursor: pointer;
+            transition: all 300ms ease;
+            border-radius: 2px;
+        }
+
+        .cont-btn .cont-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            transition: opacity 300ms ease;
+        }
+
+        .cont-btn.active {
+            border-color: var(--ink-muted);
+            color: var(--ink-primary);
+        }
+
+        .cont-btn:not(.active) {
+            opacity: 0.35;
+        }
+
+        .sep {
+            width: 1px;
+            height: 22px;
+            background: var(--border);
+            flex-shrink: 0;
+        }
+
+        .stats-bar {
+            margin-left: auto;
+            display: flex;
+            gap: 16px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--ink-muted);
+        }
+
+        .stat-item span {
+            font-weight: 600;
+            color: var(--accent-blue);
+        }
+
+        /* ---- Visualization Surface ---- */
+        .viz-surface {
+            flex: 1;
+            position: relative;
+            background: var(--bg-deep);
+            overflow: hidden;
+            cursor: crosshair;
+        }
+
+        .viz-surface svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* ---- Footer ---- */
+        .footer {
+            padding: 12px 32px;
+            border-top: 1px solid var(--border);
+            background: var(--bg-elevated);
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            flex-wrap: wrap;
+            min-height: 48px;
+        }
+
+        .legend-section {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-title {
+            font-family: var(--font-mono);
+            font-weight: 500;
+            font-size: 9px;
+            color: var(--ink-secondary);
+            white-space: nowrap;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+        }
+
+        .legend-items {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .legend-entry {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 10px;
+            color: var(--ink-secondary);
+            font-family: var(--font-mono);
+            white-space: nowrap;
+        }
+
+        .swatch {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+            border: 1px solid rgba(0,0,0,0.1);
+            flex-shrink: 0;
+        }
+
+        .swatch-circle {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            border: 1.5px solid var(--bg-surface);
+            box-shadow: 0 0 0 1px rgba(0,0,0,0.1);
+            flex-shrink: 0;
+        }
+
+        .legend-sep {
+            width: 1px;
+            height: 20px;
+            background: var(--border);
+            flex-shrink: 0;
+        }
+
+        /* ---- Figure Caption ---- */
+        .fig-caption {
+            padding: 8px 32px 10px;
+            border-top: 1px solid var(--border);
+            background: var(--bg-surface);
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--ink-muted);
+            line-height: 1.5;
+            flex-shrink: 0;
+        }
+
+        .fig-caption strong {
+            color: var(--ink-secondary);
+            font-weight: 600;
+        }
+
+        /* ---- Main Content Layout ---- */
+        .main-content {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* ---- Filter Sidebar ---- */
+        .filter-sidebar {
+            width: 260px;
+            min-width: 260px;
+            background: var(--bg-surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sidebar-header {
+            padding: 14px 16px 10px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sidebar-title {
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 15px;
+            color: var(--ink-primary);
+        }
+
+        .sidebar-count {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--ink-muted);
+        }
+
+        .sidebar-actions {
+            display: flex;
+            gap: 6px;
+            padding: 6px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .sidebar-action-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--ink-secondary);
+            font-family: var(--font-mono);
+            font-size: 9px;
+            padding: 3px 8px;
+            cursor: pointer;
+            border-radius: 2px;
+            transition: all 300ms ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .sidebar-action-btn:hover {
+            border-color: var(--ink-muted);
+            color: var(--ink-primary);
+            background: var(--bg-hover);
+        }
+
+        .sidebar-search {
+            padding: 8px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .sidebar-search input {
+            width: 100%;
+            background: var(--bg-deep);
+            border: 1px solid var(--border);
+            color: var(--ink-primary);
+            font-family: var(--font-body);
+            font-size: 12px;
+            padding: 7px 10px;
+            border-radius: 3px;
+            outline: none;
+            transition: border-color 300ms ease;
+        }
+
+        .sidebar-search input::placeholder {
+            color: var(--ink-muted);
+        }
+
+        .sidebar-search input:focus {
+            border-color: var(--accent-gold);
+        }
+
+        .sidebar-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 4px 0;
+        }
+
+        .sidebar-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar-list::-webkit-scrollbar-track {
+            background: var(--bg-surface);
+        }
+
+        .sidebar-list::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        .continent-group {
+            border-bottom: 1px solid var(--border);
+        }
+
+        .continent-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            cursor: pointer;
+            transition: background 300ms ease;
+            user-select: none;
+        }
+
+        .continent-header:hover {
+            background: var(--bg-hover);
+        }
+
+        .continent-chevron {
+            font-size: 10px;
+            color: var(--ink-muted);
+            transition: transform 0.2s;
+            width: 12px;
+            text-align: center;
+        }
+
+        .continent-chevron.open {
+            transform: rotate(90deg);
+        }
+
+        .continent-cb {
+            width: 14px;
+            height: 14px;
+            accent-color: var(--accent-gold);
+            cursor: pointer;
+        }
+
+        .continent-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .continent-name {
+            font-family: var(--font-body);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--ink-primary);
+            flex: 1;
+        }
+
+        .continent-count {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--ink-muted);
+        }
+
+        .country-list {
+            display: none;
+            padding: 0 0 4px;
+        }
+
+        .country-list.open {
+            display: block;
+        }
+
+        .country-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 16px 4px 36px;
+            cursor: pointer;
+            transition: background 300ms ease;
+            user-select: none;
+        }
+
+        .country-item:hover {
+            background: var(--bg-hover);
+        }
+
+        .country-item.hidden {
+            display: none;
+        }
+
+        .country-cb {
+            width: 13px;
+            height: 13px;
+            accent-color: var(--accent-gold);
+            cursor: pointer;
+        }
+
+        .country-code-label {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--ink-muted);
+            width: 22px;
+            flex-shrink: 0;
+        }
+
+        .country-name-label {
+            font-family: var(--font-body);
+            font-size: 11px;
+            color: var(--ink-secondary);
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* ---- Right Legend Panel ---- */
+        .legend-panel {
+            width: 240px;
+            min-width: 240px;
+            background: var(--bg-surface);
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .legend-panel-header {
+            padding: 14px 16px 10px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .legend-panel-title {
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 15px;
+            color: var(--ink-primary);
+        }
+
+        .legend-panel-badge {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--accent-blue);
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            padding: 2px 7px;
+            border-radius: 3px;
+        }
+
+        .legend-panel-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 0;
+        }
+
+        .legend-panel-body::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .legend-panel-body::-webkit-scrollbar-track {
+            background: var(--bg-surface);
+        }
+
+        .legend-panel-body::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        .legend-cluster-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 8px 16px;
+            border-bottom: 1px solid var(--border);
+            transition: background 300ms ease;
+        }
+
+        .legend-cluster-item:last-child {
+            border-bottom: none;
+        }
+
+        .legend-cluster-item:hover {
+            background: var(--bg-hover);
+        }
+
+        .legend-cluster-swatch {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+            border: 1px solid rgba(0,0,0,0.1);
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .legend-cluster-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .legend-cluster-name {
+            font-family: var(--font-body);
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--ink-primary);
+            line-height: 1.3;
+        }
+
+        .legend-cluster-meta {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--ink-muted);
+            margin-top: 2px;
+        }
+
+        .legend-cluster-meta span {
+            color: var(--ink-secondary);
+            font-weight: 500;
+        }
+
+        .legend-panel-section {
+            padding: 10px 16px 6px;
+            font-family: var(--font-mono);
+            font-size: 9px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: var(--ink-muted);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .legend-continent-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 16px;
+        }
+
+        .legend-continent-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .legend-continent-name {
+            font-family: var(--font-body);
+            font-size: 11px;
+            color: var(--ink-secondary);
+        }
+
+        /* ---- Mode Toggle ---- */
+        .mode-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--ink-secondary);
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 500;
+            padding: 5px 12px;
+            cursor: pointer;
+            transition: all 300ms ease;
+            border-radius: 2px;
+        }
+
+        .mode-btn:hover {
+            border-color: var(--ink-muted);
+            color: var(--ink-primary);
+            background: var(--bg-hover);
+        }
+
+        .mode-btn.active {
+            background: var(--accent-blue);
+            color: var(--bg-deep);
+            border-color: var(--accent-blue);
+            font-weight: 600;
+        }
+
+        /* ---- Trajectory Elements ---- */
+        .trajectory-shadow {
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            pointer-events: none;
+        }
+
+        .trajectory-line {
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            pointer-events: none;
+        }
+
+        .trajectory-dot {
+            cursor: pointer;
+            transition: r 300ms ease;
+        }
+
+        .trajectory-dot:hover {
+            filter: brightness(0.85);
+        }
+
+        .trajectory-year-label {
+            pointer-events: none;
+        }
+
+        .trajectory-name-label {
+            pointer-events: none;
+        }
+
+        .trajectory-gdp-annot {
+            pointer-events: none;
+        }
+
+        /* ---- Tooltip ---- */
+        .tooltip {
+            position: absolute;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-accent);
+            box-shadow: var(--shadow-lg);
+            padding: 0;
+            min-width: 240px;
+            max-width: 340px;
+            font-family: var(--font-body);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 300ms ease;
+            z-index: 100;
+            transform: translate(12px, 12px);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .tooltip.visible { opacity: 1; }
+
+        .tt-header {
+            background: var(--bg-hover);
+            color: var(--ink-primary);
+            padding: 10px 14px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 700;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .tt-header .tt-tag {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            font-weight: 500;
+            color: var(--ink-muted);
+            background: var(--bg-deep);
+            padding: 2px 6px;
+            border-radius: 2px;
+        }
+
+        .tt-body {
+            padding: 10px 14px;
+            font-size: 12px;
+            color: var(--ink-primary);
+        }
+
+        .tt-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .tt-row:last-child { border-bottom: none; margin-bottom: 0; }
+        .tt-label { color: var(--ink-secondary); font-size: 11px; }
+        .tt-value { font-family: var(--font-mono); font-weight: 500; font-size: 11px; }
+
+        .tt-cluster-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-family: var(--font-mono);
+            font-size: 10px;
+            font-weight: 600;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .tt-list {
+            margin-top: 8px;
+            border-top: 1px solid var(--border);
+            padding-top: 8px;
+        }
+
+        .tt-list-header {
+            font-weight: 600;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--ink-muted);
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .tt-list-item {
+            display: block;
+            padding: 2px 0 2px 10px;
+            border-left: 2px solid var(--border);
+            margin-bottom: 3px;
+            color: var(--ink-secondary);
+            font-size: 11px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="figure-container">
+        <header>
+            <div class="title-block">
+                <h1><span class="fig-num">Fig. 1</span> World Panel SOM</h1>
+                <div class="subtitle">Per-Snapshot Vesanto Clustering &middot; Fixed k &middot; 1990&ndash;2020</div>
+            </div>
+            <div class="header-badge">DBGSOM &middot; Batch Growing SOM</div>
+        </header>
+
+        <div class="toolbar">
+            <div class="control-group">
+                <span class="label">Year</span>
+                <div id="year-buttons" style="display:flex; gap:3px;"></div>
+            </div>
+
+            <div class="sep"></div>
+
+            <div class="control-group">
+                <span class="label">Mode</span>
+                <div id="mode-buttons" style="display:flex; gap:3px;"></div>
+            </div>
+
+            <div id="info-bar" class="stats-bar"></div>
+        </div>
+
+        <div class="main-content">
+            <div class="filter-sidebar" id="filter-sidebar">
+                <div class="sidebar-header">
+                    <span class="sidebar-title">Filters</span>
+                    <span class="sidebar-count" id="sidebar-count"></span>
+                </div>
+                <div class="sidebar-actions">
+                    <button class="sidebar-action-btn" id="btn-select-all">Select All</button>
+                    <button class="sidebar-action-btn" id="btn-select-none">Clear All</button>
+                </div>
+                <div class="sidebar-search">
+                    <input type="text" id="sidebar-search" placeholder="Search countries...">
+                </div>
+                <div class="sidebar-list" id="sidebar-list"></div>
+            </div>
+            <div class="viz-surface" id="viz-container">
+                <svg id="hex-svg"></svg>
+            </div>
+            <div class="legend-panel" id="legend-panel">
+                <div class="legend-panel-header">
+                    <span class="legend-panel-title">Clusters</span>
+                    <span class="legend-panel-badge" id="legend-k-badge"></span>
+                </div>
+                <div class="legend-panel-body" id="legend-panel-body"></div>
+            </div>
+        </div>
+
+        <div class="footer" id="footer-legend"></div>
+
+        <div class="fig-caption">
+            <strong>Figure 1.</strong> Self-Organizing Map of global economic indicators.
+            Hexagonal neurons colored by per-snapshot Vesanto clustering with fixed <em>k</em> per epoch.
+            All neurons&mdash;active and inactive&mdash;are assigned to clusters; inactive neurons inherit the cluster
+            of their nearest active neighbor in weight space. Prism height encodes BMU density.
+            Country markers colored by continent.
+        </div>
+    </div>
+
+    <div class="tooltip" id="tooltip"></div>
+
+    <script>
+    (async function () {
+
+        /* =============================================================
+           Configuration
+           ============================================================= */
+        const CONFIG = {
+            hexSize: 24,
+            hexRadius: 24 / Math.sqrt(3),
+            markerRadius: 3.8,
+            ringRadius: (24 / Math.sqrt(3)) * 0.45,
+            years: [1990, 1994, 1998, 2002, 2006, 2010, 2014, 2018, 2020],
+            extrudeBase: 4,
+            extrudePerCountry: 2.5,
+            extrudeMax: 22,
+            extrudeInactive: 2,
+        };
+
+        /* =============================================================
+           Cluster Color Palette
+           ============================================================= */
+        const CLUSTER_PALETTE = [
+            '#EF4444', '#F59E0B', '#10B981', '#3B82F6',
+            '#8B5CF6', '#EC4899', '#06B6D4', '#F97316',
+            '#84CC16', '#E879F9', '#14B8A6', '#FB923C',
+            '#A78BFA', '#FBBF24', '#6366F1',
+        ];
+
+        /* =============================================================
+           Continent Mapping
+           ============================================================= */
+        const CONTINENT_MAP = {
+            AO:'Africa',BF:'Africa',BI:'Africa',BJ:'Africa',BW:'Africa',
+            CD:'Africa',CF:'Africa',CG:'Africa',CI:'Africa',CM:'Africa',
+            CV:'Africa',DZ:'Africa',EG:'Africa',ET:'Africa',GA:'Africa',
+            GH:'Africa',GM:'Africa',GN:'Africa',GQ:'Africa',GW:'Africa',
+            KE:'Africa',KM:'Africa',LS:'Africa',LY:'Africa',MA:'Africa',
+            MG:'Africa',ML:'Africa',MR:'Africa',MU:'Africa',MW:'Africa',
+            MZ:'Africa',NE:'Africa',NG:'Africa',RW:'Africa',SC:'Africa',
+            SD:'Africa',SL:'Africa',SN:'Africa',SZ:'Africa',TD:'Africa',
+            TG:'Africa',TN:'Africa',TZ:'Africa',UG:'Africa',ZA:'Africa',
+            ZM:'Africa',ZW:'Africa',
+            AE:'Asia',AM:'Asia',AZ:'Asia',BD:'Asia',BH:'Asia',BN:'Asia',
+            BT:'Asia',CN:'Asia',GE:'Asia',HK:'Asia',ID:'Asia',IL:'Asia',
+            IN:'Asia',IQ:'Asia',IR:'Asia',JO:'Asia',JP:'Asia',KG:'Asia',
+            KH:'Asia',KR:'Asia',KW:'Asia',KZ:'Asia',LA:'Asia',LB:'Asia',
+            LK:'Asia',MN:'Asia',MO:'Asia',MV:'Asia',MY:'Asia',NP:'Asia',
+            OM:'Asia',PH:'Asia',PK:'Asia',PS:'Asia',QA:'Asia',SA:'Asia',
+            SG:'Asia',SY:'Asia',TH:'Asia',TJ:'Asia',TL:'Asia',TM:'Asia',
+            TR:'Asia',UZ:'Asia',VN:'Asia',YE:'Asia',
+            AL:'Europe',AT:'Europe',BA:'Europe',BE:'Europe',BG:'Europe',
+            BY:'Europe',CH:'Europe',CY:'Europe',CZ:'Europe',DE:'Europe',
+            DK:'Europe',EE:'Europe',ES:'Europe',FI:'Europe',FR:'Europe',
+            GB:'Europe',GR:'Europe',HR:'Europe',HU:'Europe',IE:'Europe',
+            IS:'Europe',IT:'Europe',LT:'Europe',LU:'Europe',LV:'Europe',
+            MD:'Europe',ME:'Europe',MK:'Europe',MT:'Europe',NL:'Europe',
+            NO:'Europe',PL:'Europe',PT:'Europe',RO:'Europe',RS:'Europe',
+            RU:'Europe',SE:'Europe',SI:'Europe',SK:'Europe',UA:'Europe',
+            BS:'N. America',BZ:'N. America',CA:'N. America',CR:'N. America',
+            CU:'N. America',DO:'N. America',GT:'N. America',HN:'N. America',
+            HT:'N. America',JM:'N. America',KN:'N. America',MX:'N. America',
+            NI:'N. America',PA:'N. America',PR:'N. America',SV:'N. America',
+            TT:'N. America',US:'N. America',AW:'N. America',BB:'N. America',
+            VC:'N. America',KI:'N. America',
+            AR:'S. America',BO:'S. America',BR:'S. America',CL:'S. America',
+            CO:'S. America',EC:'S. America',GY:'S. America',PE:'S. America',
+            PY:'S. America',SR:'S. America',UY:'S. America',VE:'S. America',
+            AU:'Oceania',FJ:'Oceania',NZ:'Oceania',
+            PG:'Oceania',SB:'Oceania',TO:'Oceania',VU:'Oceania',WS:'Oceania',
+        };
+
+        const CONTINENT_COLORS = {
+            'Africa':      '#E2725B',
+            'Asia':        '#C4A35A',
+            'Europe':      '#6B93D6',
+            'N. America':  '#9B72AA',
+            'S. America':  '#5DADE2',
+            'Oceania':     '#58D68D',
+        };
+
+        const continentOf = code => CONTINENT_MAP[code] || 'Unknown';
+        const continentColor = code => CONTINENT_COLORS[continentOf(code)] || '#666';
+
+        /* =============================================================
+           State
+           ============================================================= */
+        let currentYear = 1990;
+        let currentMode = 'snapshot'; // 'snapshot' | 'trajectory'
+        const activeContinent = new Set(Object.keys(CONTINENT_COLORS));
+        const activeCountries = new Set();
+
+        /* =============================================================
+           Data Structures
+           ============================================================= */
+        const neurons = [];
+        const neuronMap = new Map();
+        const snapshots = new Map();
+        const psClusterData = new Map();
+
+        /* =============================================================
+           Geometry Helpers
+           ============================================================= */
+        function hexToPixel(x, y) {
+            return [
+                CONFIG.hexSize * 1.5 * x,
+                CONFIG.hexSize * Math.sqrt(3) * (y + 0.5 * (x & 1))
+            ];
+        }
+
+        const HEX_VERTS = d3.range(6).map(i => {
+            const a = (60 * i + 30) * Math.PI / 180;
+            return [CONFIG.hexRadius * Math.cos(a), CONFIG.hexRadius * Math.sin(a)];
+        });
+
+        const HEX_TOP_PATH = 'M' + HEX_VERTS.map(v => v.join(',')).join('L') + 'Z';
+
+        function sideFacePath(v1, v2, extrudeH) {
+            return `M${v1[0]},${v1[1]}L${v2[0]},${v2[1]}L${v2[0]},${v2[1]+extrudeH}L${v1[0]},${v1[1]+extrudeH}Z`;
+        }
+
+        function ringOffset(idx, total) {
+            if (total <= 1) return [0, 0];
+            const r = total <= 4 ? CONFIG.ringRadius * 0.55 : CONFIG.ringRadius;
+            const a = (2 * Math.PI * idx) / Math.min(total, 10);
+            return [r * Math.cos(a), r * Math.sin(a)];
+        }
+
+        /* =============================================================
+           Color Helpers
+           ============================================================= */
+        function shadeColor(hex, factor) {
+            const c = d3.hsl(hex);
+            c.l = Math.max(0.03, c.l * factor);
+            c.s = Math.min(1, c.s * 1.05);
+            return c.formatHex();
+        }
+
+        function lightenColor(hex, factor) {
+            const c = d3.hsl(hex);
+            c.l = Math.min(0.95, c.l + (1 - c.l) * factor);
+            return c.formatHex();
+        }
+
+        /* =============================================================
+           Load Data
+           ============================================================= */
+        const [neuronsRaw, psRaw, trajRaw, evalRaw] = await Promise.all([
+            d3.csv('raw_data/neuron_weights.csv'),
+            d3.csv('raw_data/per_snapshot_clusters.csv'),
+            d3.csv('raw_data/all_trajectories.csv'),
+            d3.csv('vesanto_evaluation/cluster_evaluation_summary.csv'),
+        ]);
+
+        neuronsRaw.forEach(d => {
+            const n = { x: +d.neuron_x, y: +d.neuron_y, hitCount: +d.hit_count };
+            neurons.push(n);
+            neuronMap.set(`${n.x},${n.y}`, n);
+        });
+
+        const neuronsSorted = [...neurons].sort((a, b) => {
+            const [, ay] = hexToPixel(a.x, a.y);
+            const [, by] = hexToPixel(b.x, b.y);
+            return ay - by || a.x - b.x;
+        });
+
+        psRaw.forEach(d => {
+            const year = +d.snapshot_year;
+            if (!psClusterData.has(year)) {
+                psClusterData.set(year, {
+                    map: new Map(),
+                    activeMap: new Map(),
+                    k: +d.optimal_k,
+                    db: +d.db_score,
+                });
+            }
+            const key = `${d.neuron_x},${d.neuron_y}`;
+            psClusterData.get(year).map.set(key, +d.ps_cluster);
+            psClusterData.get(year).activeMap.set(key, +d.is_active);
+        });
+
+        trajRaw.forEach(d => {
+            const e = {
+                countryCode: d.country_code,
+                countryName: d.country_name,
+                year: +d.snapshot_year,
+                bmuX: +d.bmu_x,
+                bmuY: +d.bmu_y,
+                vesantoCluster: +d.cluster,
+                gdp: +d.GDP_per_capita_constant_2015_US_t0 || 0,
+                agri: +d.Agriculture_value_added_percent_of_GDP_t0 || 0,
+                industry: +d.Industry_value_added_percent_of_GDP_t0 || 0,
+                services: +d.Services_value_added_percent_of_GDP_t0 || 0,
+                urban: +d.Urban_population_percent_t0 || 0,
+                fertility: +d.Fertility_rate_total_t0 || 0,
+                trade: +d.Trade_percent_of_GDP_t0 || 0,
+            };
+            if (!snapshots.has(e.year)) snapshots.set(e.year, []);
+            snapshots.get(e.year).push(e);
+        });
+
+        const globalEval = new Map();
+        evalRaw.forEach(d => {
+            globalEval.set(+d.snapshot_year, {
+                db: +d.snapshot_db_score,
+                sil: +d.snapshot_sil_score,
+            });
+        });
+
+        /* =============================================================
+           Country Trajectories (for trajectory mode)
+           ============================================================= */
+        const countryTrajectories = new Map();
+        trajRaw.forEach(d => {
+            const code = d.country_code;
+            if (!countryTrajectories.has(code)) countryTrajectories.set(code, []);
+            countryTrajectories.get(code).push({
+                countryCode: code,
+                countryName: d.country_name,
+                year: +d.snapshot_year,
+                bmuX: +d.bmu_x,
+                bmuY: +d.bmu_y,
+                gdp: +d.GDP_per_capita_constant_2015_US_t0 || 0,
+            });
+        });
+        countryTrajectories.forEach(pts => pts.sort((a, b) => a.year - b.year));
+
+        /* =============================================================
+           Cluster Naming
+           ============================================================= */
+        function medianOf(arr) {
+            const s = arr.filter(v => v > 0).sort((a, b) => a - b);
+            if (s.length === 0) return 0;
+            return s[Math.floor(s.length / 2)];
+        }
+
+        /**
+         * Assigns unique, descriptive names to all clusters in a snapshot
+         * by comparing structural indicators across clusters.
+         *
+         * Strategy:
+         *  1. Assign an income tier from median GDP.
+         *  2. Compute z-scores of structural indicators (trade, urban, services,
+         *     industry, agriculture, fertility) relative to snapshot averages.
+         *  3. Name each cluster: {most-distinctive-feature} {income-tier}.
+         *  4. Deduplicate collisions via the dimension that best separates the
+         *     duplicate group (up to 2 rounds).
+         *  5. Final fallback: append GDP bracket if names still collide.
+         */
+        function assignClusterNames(ranked) {
+            if (ranked.length === 0) return;
+
+            /* ---- Income tiers ---- */
+            const tierOf = gdp => {
+                if (gdp >= 30000) return { s: 'Rich',    f: 'High-Income' };
+                if (gdp >= 15000) return { s: 'Upper',   f: 'Upper-Middle' };
+                if (gdp >= 7000)  return { s: 'Middle',  f: 'Middle-Income' };
+                if (gdp >= 3000)  return { s: 'Lower',   f: 'Lower-Middle' };
+                if (gdp >= 1000)  return { s: 'Low',     f: 'Low-Income' };
+                return                     { s: 'Fragile', f: 'Least Developed' };
+            };
+
+            /* ---- Structural dimensions with hi/lo labels ---- */
+            const DIMS = [
+                { key: 'trade',     field: 'trade',     pos: { s: 'Open',    f: 'Trade-Open' },    neg: { s: 'Closed',  f: 'Trade-Closed' } },
+                { key: 'urban',     field: 'urban',     pos: { s: 'Urban',   f: 'Urban' },         neg: { s: 'Rural',   f: 'Rural' } },
+                { key: 'services',  field: 'services',  pos: { s: 'Service', f: 'Service-Led' },   neg: { s: 'Goods',   f: 'Goods-Led' } },
+                { key: 'industry',  field: 'industry',  pos: { s: 'Ind.',    f: 'Industrial' },    neg: { s: 'Light',   f: 'Light-Ind.' } },
+                { key: 'agri',      field: 'agri',      pos: { s: 'Agrar.',  f: 'Agrarian' },      neg: { s: 'Post-Ag.',f: 'Post-Agrarian' } },
+                { key: 'fertility', field: 'fertility', pos: { s: 'Young',   f: 'High-Fertility' },neg: { s: 'Mature',  f: 'Low-Fertility' } },
+            ];
+
+            /* ---- Per-cluster profiles ---- */
+            ranked.forEach(r => {
+                r._p = {};
+                DIMS.forEach(d => { r._p[d.key] = medianOf(r.entries.map(e => e[d.field])); });
+                r._tier = tierOf(r.median);
+            });
+
+            /* ---- Snapshot-level mean & std for z-score normalization ---- */
+            const allE = ranked.flatMap(r => r.entries);
+            const st = {};
+            DIMS.forEach(d => {
+                const vals = allE.map(e => e[d.field] || 0);
+                const mean = vals.reduce((a, v) => a + v, 0) / (vals.length || 1);
+                const vari = vals.reduce((a, v) => a + (v - mean) ** 2, 0) / (vals.length || 1);
+                st[d.key] = { mean, std: Math.sqrt(vari) || 1 };
+            });
+
+            /* ---- Rank features per cluster by |z-score| ---- */
+            ranked.forEach(r => {
+                r._zRank = DIMS.map(d => {
+                    const z = (r._p[d.key] - st[d.key].mean) / st[d.key].std;
+                    return { dim: d, z, absZ: Math.abs(z), label: z >= 0 ? d.pos : d.neg };
+                }).sort((a, b) => b.absZ - a.absZ);
+            });
+
+            /* ---- Initial name = top feature + tier ---- */
+            /* Always include the structural tag — every cluster has SOME
+               most-distinctive dimension, even if the z-score is small. */
+            ranked.forEach(r => {
+                const top = r._zRank[0];
+                r.name = { short: `${top.label.s} ${r._tier.s}`, full: `${top.label.f} ${r._tier.f}` };
+            });
+
+            /* ---- Deduplicate (up to 2 rounds) ---- */
+            for (let round = 0; round < 2; round++) {
+                const groups = new Map();
+                ranked.forEach((r, i) => {
+                    if (!groups.has(r.name.full)) groups.set(r.name.full, []);
+                    groups.get(r.name.full).push(i);
+                });
+
+                let anyDup = false;
+                for (const [, indices] of groups) {
+                    if (indices.length <= 1) continue;
+                    anyDup = true;
+
+                    // Find dimension that best separates this duplicate set
+                    let bestDim = null, bestSep = -1;
+                    DIMS.forEach(d => {
+                        const vals = indices.map(i => ranked[i]._p[d.key]);
+                        const sep = (Math.max(...vals) - Math.min(...vals)) / st[d.key].std;
+                        if (sep > bestSep) { bestSep = sep; bestDim = d; }
+                    });
+
+                    if (bestDim && bestSep > 0.1) {
+                        const sorted = indices
+                            .map(i => ({ i, val: ranked[i]._p[bestDim.key] }))
+                            .sort((a, b) => a.val - b.val);
+                        sorted.forEach((item, j) => {
+                            const r = ranked[item.i];
+                            const tag = j < sorted.length / 2 ? bestDim.neg : bestDim.pos;
+                            r.name = {
+                                short: `${tag.s} ${r._tier.s}`,
+                                full: `${tag.f} ${r._tier.f}`,
+                            };
+                        });
+                    }
+                }
+                if (!anyDup) break;
+            }
+
+            /* ---- Final fallback: append GDP bracket ---- */
+            const fc = new Map();
+            ranked.forEach(r => { fc.set(r.name.full, (fc.get(r.name.full) || 0) + 1); });
+            const seen = new Map();
+            ranked.forEach(r => {
+                if (fc.get(r.name.full) > 1) {
+                    const g = r.median;
+                    const tag = g >= 10000 ? `$${(g / 1000).toFixed(0)}k`
+                              : g >= 1000  ? `$${(g / 1000).toFixed(1)}k`
+                              : `$${Math.round(g)}`;
+                    const prev = seen.get(r.name.full) || 0;
+                    seen.set(r.name.full, prev + 1);
+                    r.name = { short: `${r.name.short} ${tag}`, full: `${r.name.full} (${tag})` };
+                }
+            });
+
+            /* ---- Cleanup ---- */
+            ranked.forEach(r => { delete r._p; delete r._tier; delete r._zRank; });
+        }
+
+        /* =============================================================
+           Build Cluster Profile
+           ============================================================= */
+        function buildClusterProfile(year) {
+            const entries = snapshots.get(year) || [];
+            const clData = psClusterData.get(year);
+            if (!clData) return { ranked: [], colorOf: () => '#333', nameOf: () => ({short:'?',full:'?'}), gdpOf: () => 0, k: 0, db: 0 };
+
+            const clusterEntries = new Map();
+            entries.forEach(e => {
+                const cl = clData.map.get(`${e.bmuX},${e.bmuY}`);
+                if (cl == null) return;
+                if (!clusterEntries.has(cl)) clusterEntries.set(cl, []);
+                clusterEntries.get(cl).push(e);
+            });
+
+            const ranked = [...clusterEntries.entries()]
+                .map(([cl, ces]) => ({
+                    cl,
+                    median: medianOf(ces.map(e => e.gdp)),
+                    n: ces.length,
+                    name: { short: '', full: '' },
+                    entries: ces,
+                }))
+                .sort((a, b) => a.median - b.median);
+
+            assignClusterNames(ranked);
+
+            const clusterRank = new Map();
+            ranked.forEach((r, i) => clusterRank.set(r.cl, i));
+
+            const k = ranked.length;
+
+            const colorOf = cl => {
+                const rank = clusterRank.get(cl);
+                if (rank == null) return '#F1F5F9';
+                return CLUSTER_PALETTE[rank % CLUSTER_PALETTE.length];
+            };
+
+            const nameOf = cl => {
+                const r = ranked.find(x => x.cl === cl);
+                return r ? r.name : { short: '?', full: 'Unknown' };
+            };
+
+            const gdpOf = cl => {
+                const r = ranked.find(x => x.cl === cl);
+                return r ? r.median : 0;
+            };
+
+            return { ranked, colorOf, nameOf, gdpOf, k: clData.k, db: clData.db };
+        }
+
+        /* =============================================================
+           SVG Setup
+           ============================================================= */
+        let svg, gMain, gHexPrisms, gTrajectories, gClusterLabels, gMarkers;
+
+        (function initVis() {
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            neurons.forEach(n => {
+                const [px, py] = hexToPixel(n.x, n.y);
+                minX = Math.min(minX, px);
+                minY = Math.min(minY, py);
+                maxX = Math.max(maxX, px);
+                maxY = Math.max(maxY, py);
+            });
+
+            const pad = CONFIG.hexSize * 4;
+            const vbX = minX - pad;
+            const vbY = minY - pad - CONFIG.extrudeMax;
+            const vbW = (maxX - minX) + pad * 2;
+            const vbH = (maxY - minY) + pad * 2 + CONFIG.extrudeMax + 10;
+
+            svg = d3.select('#hex-svg')
+                .attr('viewBox', `${vbX} ${vbY} ${vbW} ${vbH}`)
+                .attr('preserveAspectRatio', 'xMidYMid meet');
+
+            const defs = svg.append('defs');
+
+            // Subtle grid pattern
+            const pattern = defs.append('pattern')
+                .attr('id', 'grid-dots')
+                .attr('width', 20).attr('height', 20)
+                .attr('patternUnits', 'userSpaceOnUse');
+            pattern.append('circle')
+                .attr('cx', 10).attr('cy', 10).attr('r', 0.5)
+                .attr('fill', 'rgba(15,23,42,0.03)');
+
+            // Glow filter for active hexes
+            const glow = defs.append('filter')
+                .attr('id', 'hex-glow')
+                .attr('x', '-30%').attr('y', '-30%')
+                .attr('width', '160%').attr('height', '160%');
+            glow.append('feGaussianBlur')
+                .attr('in', 'SourceAlpha').attr('stdDeviation', '4').attr('result', 'blur');
+            glow.append('feFlood')
+                .attr('flood-color', '#000').attr('flood-opacity', '0.12').attr('result', 'color');
+            glow.append('feComposite')
+                .attr('in', 'color').attr('in2', 'blur').attr('operator', 'in').attr('result', 'shadow');
+            const glowMerge = glow.append('feMerge');
+            glowMerge.append('feMergeNode').attr('in', 'shadow');
+            glowMerge.append('feMergeNode').attr('in', 'SourceGraphic');
+
+            gMain = svg.append('g');
+
+            gMain.append('rect')
+                .attr('x', vbX).attr('y', vbY)
+                .attr('width', vbW).attr('height', vbH)
+                .attr('fill', 'url(#grid-dots)');
+
+            gHexPrisms = gMain.append('g').attr('class', 'layer-prisms');
+            gTrajectories = gMain.append('g').attr('class', 'layer-trajectories');
+            gClusterLabels = gMain.append('g').attr('class', 'layer-labels');
+            gMarkers = gMain.append('g').attr('class', 'layer-markers');
+
+            svg.call(d3.zoom()
+                .scaleExtent([0.4, 10])
+                .on('zoom', e => gMain.attr('transform', e.transform)));
+
+            // Pre-create hex prism groups (sorted back-to-front)
+            neuronsSorted.forEach(n => {
+                const g = gHexPrisms.append('g')
+                    .attr('class', 'hex-prism')
+                    .attr('data-key', `${n.x},${n.y}`)
+                    .datum(n);
+
+                // 3 side faces: right, bottom, left
+                g.append('path').attr('class', 'side-right');
+                g.append('path').attr('class', 'side-bottom');
+                g.append('path').attr('class', 'side-left');
+
+                // Top face
+                g.append('path').attr('class', 'top-face')
+                    .attr('d', HEX_TOP_PATH)
+                    .on('mouseenter', onHexHover)
+                    .on('mousemove', moveTooltip)
+                    .on('mouseleave', hideTooltip);
+
+                // Cluster boundary overlay (drawn as thicker top-face outline)
+                g.append('path').attr('class', 'boundary-ring')
+                    .attr('d', HEX_TOP_PATH)
+                    .attr('fill', 'none')
+                    .attr('stroke', 'none')
+                    .attr('stroke-width', 0);
+            });
+        })();
+
+        /* =============================================================
+           Year Buttons
+           ============================================================= */
+        const yearContainer = d3.select('#year-buttons');
+        CONFIG.years.forEach(y => {
+            yearContainer.append('button')
+                .attr('class', 'year-btn')
+                .classed('active', y === currentYear)
+                .attr('data-year', y)
+                .text(y)
+                .on('click', () => renderSnapshot(y));
+        });
+
+        /* =============================================================
+           Build Sidebar Country Filter
+           ============================================================= */
+        const allCountries = new Map();
+        trajRaw.forEach(d => {
+            if (!allCountries.has(d.country_code)) {
+                allCountries.set(d.country_code, d.country_name);
+            }
+        });
+
+        const continentGroups = new Map();
+        Object.keys(CONTINENT_COLORS).forEach(cont => {
+            continentGroups.set(cont, []);
+        });
+        allCountries.forEach((name, code) => {
+            const cont = continentOf(code);
+            if (continentGroups.has(cont)) {
+                continentGroups.get(cont).push({ code, name });
+            }
+        });
+        continentGroups.forEach(countries => {
+            countries.sort((a, b) => a.name.localeCompare(b.name));
+        });
+
+        // Initialize all countries as active
+        allCountries.forEach((name, code) => { activeCountries.add(code); });
+
+        const sidebarList = d3.select('#sidebar-list');
+
+        function updateSidebarCount() {
+            d3.select('#sidebar-count').text(`${activeCountries.size} / ${allCountries.size}`);
+        }
+
+        function syncSidebarContinent(continent) {
+            const countries = continentGroups.get(continent) || [];
+            const activeCount = countries.filter(c => activeCountries.has(c.code)).length;
+            const cb = sidebarList.select(`.continent-cb[data-continent="${continent}"]`);
+            cb.property('checked', activeCount === countries.length);
+            cb.property('indeterminate', activeCount > 0 && activeCount < countries.length);
+            countries.forEach(c => {
+                sidebarList.select(`.country-cb[data-code="${c.code}"]`)
+                    .property('checked', activeCountries.has(c.code));
+            });
+        }
+
+        function syncToolbarContinent(continent) {
+            const countries = continentGroups.get(continent) || [];
+            const allActive = countries.every(c => activeCountries.has(c.code));
+            if (allActive) activeContinent.add(continent);
+            else activeContinent.delete(continent);
+        }
+
+        continentGroups.forEach((countries, continent) => {
+            const group = sidebarList.append('div').attr('class', 'continent-group');
+
+            const header = group.append('div').attr('class', 'continent-header');
+            header.append('span').attr('class', 'continent-chevron').text('\u25B8');
+
+            const cb = header.append('input')
+                .attr('type', 'checkbox')
+                .attr('class', 'continent-cb')
+                .property('checked', true)
+                .attr('data-continent', continent);
+
+            header.append('span').attr('class', 'continent-dot')
+                .style('background', CONTINENT_COLORS[continent]);
+            header.append('span').attr('class', 'continent-name').text(continent);
+            header.append('span').attr('class', 'continent-count').text(countries.length);
+
+            const list = group.append('div').attr('class', 'country-list');
+
+            countries.forEach(c => {
+                const item = list.append('div')
+                    .attr('class', 'country-item')
+                    .attr('data-code', c.code)
+                    .attr('data-name', c.name.toLowerCase())
+                    .attr('data-continent', continent);
+
+                const countryCb = item.append('input')
+                    .attr('type', 'checkbox')
+                    .attr('class', 'country-cb')
+                    .property('checked', true)
+                    .attr('data-code', c.code);
+
+                item.append('span').attr('class', 'country-code-label').text(c.code);
+                item.append('span').attr('class', 'country-name-label').text(c.name);
+
+                countryCb.on('change', function (e) {
+                    e.stopPropagation();
+                    if (this.checked) activeCountries.add(c.code);
+                    else activeCountries.delete(c.code);
+                    syncSidebarContinent(continent);
+                    syncToolbarContinent(continent);
+                    updateSidebarCount();
+                    renderSnapshot(currentYear);
+                });
+
+                item.on('click', function (e) {
+                    if (e.target.tagName === 'INPUT') return;
+                    const el = countryCb.node();
+                    el.checked = !el.checked;
+                    el.dispatchEvent(new Event('change'));
+                });
+            });
+
+            cb.on('change', function (e) {
+                e.stopPropagation();
+                const checked = this.checked;
+                countries.forEach(c => {
+                    if (checked) activeCountries.add(c.code);
+                    else activeCountries.delete(c.code);
+                });
+                list.selectAll('.country-cb').property('checked', checked);
+                syncToolbarContinent(continent);
+                updateSidebarCount();
+                renderSnapshot(currentYear);
+            });
+
+            header.on('click', function (e) {
+                if (e.target.tagName === 'INPUT') return;
+                const chevron = d3.select(this).select('.continent-chevron');
+                const isOpen = list.classed('open');
+                list.classed('open', !isOpen);
+                chevron.classed('open', !isOpen).text(!isOpen ? '\u25BE' : '\u25B8');
+            });
+        });
+
+        // Search filter
+        d3.select('#sidebar-search').on('input', function () {
+            const query = this.value.toLowerCase().trim();
+            sidebarList.selectAll('.country-item').each(function () {
+                const item = d3.select(this);
+                const name = item.attr('data-name');
+                const code = item.attr('data-code').toLowerCase();
+                const match = !query || name.includes(query) || code.includes(query);
+                item.classed('hidden', !match);
+            });
+            if (query) {
+                sidebarList.selectAll('.continent-group').each(function () {
+                    const group = d3.select(this);
+                    const hasVisible = group.selectAll('.country-item:not(.hidden)').size() > 0;
+                    group.select('.country-list').classed('open', hasVisible);
+                    group.select('.continent-chevron').classed('open', hasVisible)
+                        .text(hasVisible ? '\u25BE' : '\u25B8');
+                });
+            }
+        });
+
+        // Select All / Clear All buttons
+        d3.select('#btn-select-all').on('click', function () {
+            allCountries.forEach((name, code) => { activeCountries.add(code); });
+            sidebarList.selectAll('.country-cb').property('checked', true);
+            sidebarList.selectAll('.continent-cb').property('checked', true).property('indeterminate', false);
+            Object.keys(CONTINENT_COLORS).forEach(cont => {
+                activeContinent.add(cont);
+                syncToolbarContinent(cont);
+            });
+            updateSidebarCount();
+            renderSnapshot(currentYear);
+        });
+
+        d3.select('#btn-select-none').on('click', function () {
+            activeCountries.clear();
+            sidebarList.selectAll('.country-cb').property('checked', false);
+            sidebarList.selectAll('.continent-cb').property('checked', false).property('indeterminate', false);
+            Object.keys(CONTINENT_COLORS).forEach(cont => {
+                activeContinent.delete(cont);
+                syncToolbarContinent(cont);
+            });
+            updateSidebarCount();
+            renderSnapshot(currentYear);
+        });
+
+        updateSidebarCount();
+
+        /* =============================================================
+           Mode Toggle (toolbar)
+           ============================================================= */
+        const modeContainer = d3.select('#mode-buttons');
+        ['snapshot', 'trajectory'].forEach(mode => {
+            modeContainer.append('button')
+                .attr('class', 'mode-btn')
+                .classed('active', mode === currentMode)
+                .attr('data-mode', mode)
+                .text(mode === 'snapshot' ? 'Snapshot' : 'Trajectory')
+                .on('click', function () {
+                    if (currentMode === mode) return;
+                    currentMode = mode;
+                    d3.selectAll('.mode-btn').classed('active', function () {
+                        return this.dataset.mode === mode;
+                    });
+                    if (mode === 'trajectory') {
+                        // Clear all countries so user picks specific ones
+                        activeCountries.clear();
+                        sidebarList.selectAll('.country-cb').property('checked', false);
+                        sidebarList.selectAll('.continent-cb').property('checked', false).property('indeterminate', false);
+                        Object.keys(CONTINENT_COLORS).forEach(cont => activeContinent.delete(cont));
+                    } else {
+                        // Restore all countries for snapshot mode
+                        allCountries.forEach((name, code) => activeCountries.add(code));
+                        sidebarList.selectAll('.country-cb').property('checked', true);
+                        sidebarList.selectAll('.continent-cb').property('checked', true).property('indeterminate', false);
+                        Object.keys(CONTINENT_COLORS).forEach(cont => activeContinent.add(cont));
+                    }
+                    updateSidebarCount();
+                    renderSnapshot(currentYear);
+                });
+        });
+
+        /* =============================================================
+           Render Snapshot
+           ============================================================= */
+        let currentProfile = null;
+
+        function renderSnapshot(year) {
+            currentYear = year;
+            const entries = snapshots.get(year) || [];
+            const clData = psClusterData.get(year);
+            const profile = buildClusterProfile(year);
+            currentProfile = profile;
+
+            // Build per-neuron data
+            const neuronCountries = new Map();
+            entries.forEach(d => {
+                const k = `${d.bmuX},${d.bmuY}`;
+                if (!neuronCountries.has(k)) neuronCountries.set(k, []);
+                neuronCountries.get(k).push(d);
+            });
+
+            // Update each hex prism — ALL hexes get cluster color
+            gHexPrisms.selectAll('.hex-prism').each(function (n) {
+                const g = d3.select(this);
+                const key = `${n.x},${n.y}`;
+                const [px, py] = hexToPixel(n.x, n.y);
+                const countries = neuronCountries.get(key) || [];
+                const cl = clData ? clData.map.get(key) : null;
+                const isActive = clData ? (clData.activeMap.get(key) === 1) : (countries.length > 0);
+                const hasCountries = countries.length > 0;
+
+                // Active neurons with countries: tall prisms
+                // Active neurons without countries this snapshot: medium height
+                // Inactive (propagated) neurons: flat tiles
+                const extrudeH = hasCountries
+                    ? Math.min(CONFIG.extrudeBase + countries.length * CONFIG.extrudePerCountry, CONFIG.extrudeMax)
+                    : isActive ? CONFIG.extrudeBase : CONFIG.extrudeInactive;
+
+                const baseColor = cl != null ? profile.colorOf(cl) : '#F1F5F9';
+                const topColor = isActive ? baseColor : shadeColor(baseColor, 0.55);
+                const topOpacity = isActive ? 0.90 : 0.40;
+
+                // Side face colors (simulated lighting from upper-left)
+                const sideRightColor  = shadeColor(baseColor, isActive ? 0.7 : 0.35);
+                const sideBottomColor = shadeColor(baseColor, isActive ? 0.5 : 0.28);
+                const sideLeftColor   = shadeColor(baseColor, isActive ? 0.4 : 0.22);
+                const sideOpacity     = isActive ? 0.85 : 0.30;
+
+                // Build side face paths
+                const rightPath  = sideFacePath(HEX_VERTS[5], HEX_VERTS[0], extrudeH);
+                const bottomPath = sideFacePath(HEX_VERTS[0], HEX_VERTS[1], extrudeH);
+                const leftPath   = sideFacePath(HEX_VERTS[1], HEX_VERTS[2], extrudeH);
+
+                const t = g.transition().duration(450).ease(d3.easeCubicOut);
+
+                g.select('.side-right')
+                    .transition(t)
+                    .attr('d', rightPath)
+                    .attr('transform', `translate(${px},${py})`)
+                    .attr('fill', sideRightColor)
+                    .attr('fill-opacity', sideOpacity)
+                    .attr('stroke', 'none');
+
+                g.select('.side-bottom')
+                    .transition(t)
+                    .attr('d', bottomPath)
+                    .attr('transform', `translate(${px},${py})`)
+                    .attr('fill', sideBottomColor)
+                    .attr('fill-opacity', sideOpacity)
+                    .attr('stroke', 'none');
+
+                g.select('.side-left')
+                    .transition(t)
+                    .attr('d', leftPath)
+                    .attr('transform', `translate(${px},${py})`)
+                    .attr('fill', sideLeftColor)
+                    .attr('fill-opacity', sideOpacity)
+                    .attr('stroke', 'none');
+
+                g.select('.top-face')
+                    .transition(t)
+                    .attr('transform', `translate(${px},${py})`)
+                    .attr('fill', topColor)
+                    .attr('fill-opacity', topOpacity)
+                    .attr('stroke', cl != null ? lightenColor(baseColor, isActive ? 0.3 : 0.15) : 'rgba(0,0,0,0.05)')
+                    .attr('stroke-width', cl != null ? (isActive ? 1.0 : 0.6) : 0.3);
+
+                // Cluster boundary ring: thicker outline at cluster edges
+                g.select('.boundary-ring')
+                    .transition(t)
+                    .attr('transform', `translate(${px},${py})`)
+                    .attr('stroke', cl != null && isActive ? lightenColor(baseColor, 0.5) : 'none')
+                    .attr('stroke-width', cl != null && isActive ? 2.2 : 0)
+                    .attr('stroke-opacity', cl != null && isActive ? 0.4 : 0);
+            });
+
+            if (currentMode === 'snapshot') {
+                // ---- Snapshot mode: country markers ----
+                gTrajectories.selectAll('*').remove();
+
+                const markers = [];
+                neuronCountries.forEach((countries, key) => {
+                    const visible = countries.filter(c => activeCountries.has(c.countryCode));
+                    const [bx, by] = key.split(',').map(Number);
+                    const [px, py] = hexToPixel(bx, by);
+                    visible.forEach((c, i) => {
+                        const [ox, oy] = ringOffset(i, visible.length);
+                        markers.push({ ...c, px: px + ox, py: py + oy });
+                    });
+                });
+
+                gMarkers.selectAll('.dot')
+                    .data(markers, d => d.countryCode)
+                    .join(
+                        enter => enter.append('circle')
+                            .attr('class', 'dot')
+                            .attr('r', 0)
+                            .attr('cx', d => d.px)
+                            .attr('cy', d => d.py)
+                            .attr('fill', d => continentColor(d.countryCode))
+                            .attr('stroke', 'rgba(0,0,0,0.12)')
+                            .attr('stroke-width', 1)
+                            .on('mouseenter', onMarkerHover)
+                            .on('mousemove', moveTooltip)
+                            .on('mouseleave', hideTooltip)
+                            .call(e => e.transition().duration(350).ease(d3.easeBackOut).attr('r', CONFIG.markerRadius)),
+                        update => update.transition().duration(400)
+                            .attr('cx', d => d.px)
+                            .attr('cy', d => d.py)
+                            .attr('fill', d => continentColor(d.countryCode)),
+                        exit => exit.transition().duration(200).attr('r', 0).remove()
+                    );
+
+                updateClusterLabels(profile, neuronCountries);
+
+            } else {
+                // ---- Trajectory mode ----
+                gMarkers.selectAll('.dot').transition().duration(200).attr('r', 0).remove();
+                gClusterLabels.selectAll('*').transition().duration(200).attr('opacity', 0).remove();
+
+                renderTrajectoryPaths(year);
+            }
+
+            // Year buttons
+            d3.selectAll('.year-btn').classed('active', function () {
+                return +this.dataset.year === year;
+            });
+
+            // Stats bar
+            const gEval = globalEval.get(year);
+            const statsItems = [
+                `Year <span>${year}</span>`,
+                `k = <span>${profile.k}</span>`,
+                `DB <span>${profile.db.toFixed(3)}</span>`,
+            ];
+            if (gEval) {
+                statsItems.push(`Sil <span>${gEval.sil.toFixed(3)}</span>`);
+            }
+            statsItems.push(`N = <span>${entries.length}</span>`);
+
+            const bar = d3.select('#info-bar').html('');
+            statsItems.forEach(h => bar.append('div').attr('class', 'stat-item').html(h));
+
+            updateLegend(profile);
+        }
+
+        /* =============================================================
+           Cluster Labels
+           ============================================================= */
+        function updateClusterLabels(profile, neuronCountries) {
+            const clData = psClusterData.get(currentYear);
+            if (!clData) { gClusterLabels.selectAll('*').remove(); return; }
+
+            // Compute cluster centroids from ALL neurons (full grid)
+            const clusterPositions = new Map();
+            neurons.forEach(n => {
+                const key = `${n.x},${n.y}`;
+                const cl = clData.map.get(key);
+                if (cl == null) return;
+                if (!clusterPositions.has(cl)) clusterPositions.set(cl, { xs: [], ys: [], count: 0 });
+                const [px, py] = hexToPixel(n.x, n.y);
+                const cp = clusterPositions.get(cl);
+                cp.xs.push(px);
+                cp.ys.push(py);
+                const countries = neuronCountries.get(key) || [];
+                cp.count += countries.length;
+            });
+
+            const labelData = [...clusterPositions.entries()].map(([cl, pos]) => {
+                const cx = d3.mean(pos.xs);
+                const cy = d3.mean(pos.ys);
+                const name = profile.nameOf(cl);
+                const color = profile.colorOf(cl);
+                const gdp = profile.gdpOf(cl);
+                return { cl, cx, cy, name, color, gdp, count: pos.count };
+            });
+
+            const labels = gClusterLabels.selectAll('.cl-label-group')
+                .data(labelData, d => d.cl);
+
+            labels.exit().transition().duration(200).attr('opacity', 0).remove();
+
+            const enter = labels.enter().append('g')
+                .attr('class', 'cl-label-group')
+                .attr('opacity', 0)
+                .attr('pointer-events', 'none');
+
+            enter.append('rect')
+                .attr('class', 'cl-label-bg')
+                .attr('rx', 3).attr('ry', 3);
+
+            enter.append('text')
+                .attr('class', 'cl-label-text')
+                .attr('text-anchor', 'middle')
+                .attr('dominant-baseline', 'central');
+
+            const merged = enter.merge(labels);
+
+            merged.transition().duration(450).ease(d3.easeCubicOut)
+                .attr('opacity', 1)
+                .attr('transform', d => `translate(${d.cx},${d.cy - CONFIG.hexRadius * 1.8})`);
+
+            merged.select('.cl-label-text')
+                .text(d => d.name.short)
+                .attr('fill', d => shadeColor(d.color, 0.6))
+                .attr('font-family', 'var(--font-mono)')
+                .attr('font-weight', '700')
+                .attr('font-size', '10px')
+                .attr('letter-spacing', '0.5px')
+                .attr('y', 0);
+
+            // Size background rects to text
+            merged.each(function (d) {
+                const textEl = d3.select(this).select('.cl-label-text').node();
+                if (!textEl) return;
+                const bbox = textEl.getBBox();
+                d3.select(this).select('.cl-label-bg')
+                    .attr('x', bbox.x - 6)
+                    .attr('y', bbox.y - 3)
+                    .attr('width', bbox.width + 12)
+                    .attr('height', bbox.height + 6)
+                    .attr('fill', lightenColor(d.color, 0.85))
+                    .attr('stroke', lightenColor(d.color, 0.4))
+                    .attr('stroke-width', 0.8)
+                    .attr('opacity', 0.90);
+            });
+        }
+
+        /* =============================================================
+           Trajectory Rendering
+           ============================================================= */
+        const YEAR_ABBR = y => "'" + String(y).slice(2);
+
+        function renderTrajectoryPaths(highlightYear) {
+            const trajLine = d3.line()
+                .x(d => d.px)
+                .y(d => d.py)
+                .curve(d3.curveCatmullRom.alpha(0.5));
+
+            // Build trajectory data for active countries
+            const trajData = [];
+            countryTrajectories.forEach((points, code) => {
+                if (!activeCountries.has(code)) return;
+                const pixelPts = points.map((p, i) => {
+                    const [px, py] = hexToPixel(p.bmuX, p.bmuY);
+                    return { ...p, px, py, idx: i };
+                });
+                trajData.push({
+                    code,
+                    name: points[0].countryName,
+                    continent: continentOf(code),
+                    color: continentColor(code),
+                    points: pixelPts,
+                });
+            });
+
+            // Join trajectory groups
+            const groups = gTrajectories.selectAll('.trajectory-group')
+                .data(trajData, d => d.code);
+
+            groups.exit().transition().duration(250).attr('opacity', 0).remove();
+
+            const enter = groups.enter().append('g')
+                .attr('class', 'trajectory-group')
+                .attr('opacity', 0);
+
+            // Shadow line (wider, dark, for contrast)
+            enter.append('path').attr('class', 'trajectory-shadow');
+            // Main colored line
+            enter.append('path').attr('class', 'trajectory-line');
+
+            const merged = enter.merge(groups);
+            merged.transition().duration(500).attr('opacity', 1);
+
+            // Shadow path (gives the line depth/readability)
+            merged.select('.trajectory-shadow')
+                .attr('d', d => trajLine(d.points))
+                .attr('fill', 'none')
+                .attr('stroke', 'rgba(0,0,0,0.06)')
+                .attr('stroke-width', 3)
+                .attr('stroke-linecap', 'round')
+                .attr('stroke-linejoin', 'round');
+
+            // Main colored path
+            merged.select('.trajectory-line')
+                .attr('d', d => trajLine(d.points))
+                .attr('stroke', d => d.color)
+                .attr('stroke-width', 2.5)
+                .attr('stroke-opacity', 0.85);
+
+            // Per-point elements: dots, year labels, segments
+            merged.each(function (d) {
+                const g = d3.select(this);
+                const total = d.points.length;
+
+                // --- Segment tick lines between consecutive dots ---
+                const segments = [];
+                for (let i = 0; i < total - 1; i++) {
+                    const a = d.points[i], b = d.points[i + 1];
+                    const mx = (a.px + b.px) / 2;
+                    const my = (a.py + b.py) / 2;
+                    const dx = b.px - a.px, dy = b.py - a.py;
+                    const len = Math.sqrt(dx * dx + dy * dy);
+                    // Skip if the two dots are at the same neuron
+                    if (len < 2) continue;
+                    segments.push({
+                        mx, my,
+                        fromYear: a.year,
+                        toYear: b.year,
+                        fromGdp: a.gdp,
+                        toGdp: b.gdp,
+                    });
+                }
+
+                // --- Year dots ---
+                const dots = g.selectAll('.trajectory-dot')
+                    .data(d.points, p => p.year);
+
+                dots.exit().remove();
+
+                const dotsEnter = dots.enter().append('circle')
+                    .attr('class', 'trajectory-dot')
+                    .attr('cx', p => p.px)
+                    .attr('cy', p => p.py)
+                    .attr('r', 0)
+                    .attr('fill', d.color)
+                    .on('mouseenter', function (e, p) { onTrajectoryDotHover(e, p, d); })
+                    .on('mousemove', moveTooltip)
+                    .on('mouseleave', hideTooltip);
+
+                dotsEnter.merge(dots)
+                    .transition().duration(400).ease(d3.easeBackOut)
+                    .attr('cx', p => p.px)
+                    .attr('cy', p => p.py)
+                    .attr('r', p => {
+                        if (p.year === highlightYear) return 6;
+                        // Graduated: earlier smaller, later larger
+                        return 2.5 + (p.idx / (total - 1 || 1)) * 1.5;
+                    })
+                    .attr('fill', p => {
+                        if (p.year === highlightYear) return lightenColor(d.color, 0.35);
+                        return d.color;
+                    })
+                    .attr('fill-opacity', p => p.year === highlightYear ? 1 : 0.7)
+                    .attr('stroke', p => p.year === highlightYear ? '#1E293B' : 'rgba(0,0,0,0.12)')
+                    .attr('stroke-width', p => p.year === highlightYear ? 2 : 0.8);
+
+                // --- Year labels at each dot ---
+                const yearLabels = g.selectAll('.trajectory-year-label')
+                    .data(d.points, p => p.year);
+
+                yearLabels.exit().remove();
+
+                yearLabels.enter().append('text')
+                    .attr('class', 'trajectory-year-label')
+                    .attr('text-anchor', 'middle')
+                    .attr('pointer-events', 'none')
+                    .attr('font-family', 'var(--font-mono)')
+                    .attr('font-weight', '600')
+                    .attr('opacity', 0)
+                  .merge(yearLabels)
+                    .transition().duration(400)
+                    .attr('x', p => p.px)
+                    .attr('y', p => p.py - (p.year === highlightYear ? 12 : 8))
+                    .attr('font-size', p => p.year === highlightYear ? '9px' : '7px')
+                    .attr('fill', p => {
+                        if (p.year === highlightYear) return lightenColor(d.color, 0.5);
+                        return d3.hsl(d.color).brighter(0.2);
+                    })
+                    .attr('opacity', p => p.year === highlightYear ? 1 : 0.6)
+                    .text(p => YEAR_ABBR(p.year));
+
+                // --- Country name label at highlighted dot ---
+                let nameLabel = g.select('.trajectory-name-label');
+                if (nameLabel.empty()) {
+                    nameLabel = g.append('text')
+                        .attr('class', 'trajectory-name-label')
+                        .attr('text-anchor', 'middle')
+                        .attr('pointer-events', 'none')
+                        .attr('font-family', 'var(--font-body)')
+                        .attr('font-weight', '700')
+                        .attr('font-size', '10px');
+                }
+                const hlPt = d.points.find(p => p.year === highlightYear);
+                if (hlPt) {
+                    nameLabel.transition().duration(400)
+                        .attr('x', hlPt.px)
+                        .attr('y', hlPt.py - 20)
+                        .attr('fill', lightenColor(d.color, 0.5))
+                        .attr('opacity', 1)
+                        .text(`${d.code} ${d.name}`);
+                }
+
+                // --- GDP change annotation at start and end ---
+                let gdpAnnot = g.select('.trajectory-gdp-annot');
+                if (gdpAnnot.empty()) {
+                    gdpAnnot = g.append('text')
+                        .attr('class', 'trajectory-gdp-annot')
+                        .attr('text-anchor', 'middle')
+                        .attr('pointer-events', 'none')
+                        .attr('font-family', 'var(--font-mono)')
+                        .attr('font-weight', '500')
+                        .attr('font-size', '8px')
+                        .attr('fill', 'var(--ink-muted)');
+                }
+                if (d.points.length >= 2) {
+                    const first = d.points[0], last = d.points[total - 1];
+                    const change = last.gdp - first.gdp;
+                    const sign = change >= 0 ? '+' : '';
+                    const changeStr = Math.abs(change) >= 1000
+                        ? `${sign}$${(change / 1000).toFixed(1)}k`
+                        : `${sign}$${Math.round(change)}`;
+                    gdpAnnot.transition().duration(400)
+                        .attr('x', last.px)
+                        .attr('y', last.py + 14)
+                        .attr('fill', change >= 0 ? '#10B981' : '#EF4444')
+                        .attr('opacity', 0.8)
+                        .text(`${fmtGdp(first.gdp)} \u2192 ${fmtGdp(last.gdp)} (${changeStr})`);
+                }
+            });
+        }
+
+        function onTrajectoryDotHover(e, p, traj) {
+            const clData = psClusterData.get(p.year);
+            const cl = clData ? clData.map.get(`${p.bmuX},${p.bmuY}`) : null;
+
+            // Find the index in the trajectory
+            const idx = traj.points.findIndex(pt => pt.year === p.year);
+            const prev = idx > 0 ? traj.points[idx - 1] : null;
+            const next = idx < traj.points.length - 1 ? traj.points[idx + 1] : null;
+
+            let html = `
+                <div class="tt-header">
+                    <span>${p.countryName}</span>
+                    <span class="tt-tag">${p.countryCode} &middot; ${p.year}</span>
+                </div>
+                <div class="tt-body">
+                    <div class="tt-row">
+                        <span class="tt-label">Continent</span>
+                        <span class="tt-value" style="color:${traj.color}">${traj.continent}</span>
+                    </div>
+                    <div class="tt-row">
+                        <span class="tt-label">GDP per capita</span>
+                        <span class="tt-value">${fmtGdp(p.gdp)}</span>
+                    </div>`;
+
+            if (cl != null && currentProfile) {
+                const clName = currentProfile.nameOf(cl);
+                const clColor = currentProfile.colorOf(cl);
+                html += `
+                    <div class="tt-row">
+                        <span class="tt-label">Cluster</span>
+                        <span class="tt-cluster-badge" style="background:${lightenColor(clColor, 0.85)};color:${shadeColor(clColor, 0.6)}">
+                            #${cl} &middot; ${clName.short}
+                        </span>
+                    </div>`;
+            }
+
+            html += `
+                    <div class="tt-row">
+                        <span class="tt-label">BMU</span>
+                        <span class="tt-value">(${p.bmuX}, ${p.bmuY})</span>
+                    </div>`;
+
+            // Movement context
+            html += `<div class="tt-list">
+                    <span class="tt-list-header">Trajectory (${traj.points.length} snapshots)</span>`;
+
+            traj.points.forEach((pt, i) => {
+                const isCurrent = pt.year === p.year;
+                const style = isCurrent
+                    ? 'font-weight:700;color:var(--ink-primary);border-left-color:' + traj.color
+                    : '';
+                const marker = isCurrent ? '\u25B6 ' : '';
+                html += `<span class="tt-list-item" style="${style}">
+                    ${marker}${pt.year} &mdash; ${fmtGdp(pt.gdp)} &middot; BMU (${pt.bmuX},${pt.bmuY})
+                </span>`;
+            });
+
+            html += `</div></div>`;
+            tt.html(html).classed('visible', true);
+        }
+
+        /* =============================================================
+           Legend
+           ============================================================= */
+        function updateLegend(profile) {
+            // Right panel: cluster legend
+            d3.select('#legend-k-badge').text(`k = ${profile.k}`);
+            const body = d3.select('#legend-panel-body').html('');
+
+            profile.ranked.forEach(r => {
+                const item = body.append('div').attr('class', 'legend-cluster-item');
+                item.append('div').attr('class', 'legend-cluster-swatch')
+                    .style('background', profile.colorOf(r.cl));
+                const info = item.append('div').attr('class', 'legend-cluster-info');
+                info.append('div').attr('class', 'legend-cluster-name')
+                    .text(r.name.full);
+                const gdpStr = r.median >= 1000
+                    ? `$${(r.median / 1000).toFixed(1)}k`
+                    : `$${Math.round(r.median)}`;
+                info.append('div').attr('class', 'legend-cluster-meta')
+                    .html(`Median GDP <span>${gdpStr}</span> &middot; <span>${r.n}</span> countries`);
+            });
+
+            // Continents section in the right panel
+            body.append('div').attr('class', 'legend-panel-section').text('Continents');
+            Object.entries(CONTINENT_COLORS).forEach(([name, color]) => {
+                const row = body.append('div').attr('class', 'legend-continent-row');
+                row.append('span').attr('class', 'legend-continent-dot')
+                    .style('background', color);
+                row.append('span').attr('class', 'legend-continent-name').text(name);
+            });
+
+            // Footer: compact summary
+            const el = d3.select('#footer-legend').html('');
+            const clSec = el.append('div').attr('class', 'legend-section');
+            clSec.append('span').attr('class', 'legend-title')
+                .text(`${profile.k} clusters`);
+            const clItems = clSec.append('div').attr('class', 'legend-items');
+            profile.ranked.forEach(r => {
+                const entry = clItems.append('span').attr('class', 'legend-entry');
+                entry.append('span').attr('class', 'swatch')
+                    .style('background', profile.colorOf(r.cl));
+                entry.append('span').text(r.name.short)
+                    .style('color', 'var(--ink-secondary)');
+            });
+        }
+
+        /* =============================================================
+           Tooltips
+           ============================================================= */
+        const tt = d3.select('#tooltip');
+
+        function hideTooltip() { tt.classed('visible', false); }
+
+        function moveTooltip(e) {
+            let x = e.pageX + 16;
+            let y = e.pageY + 16;
+            if (x + 280 > window.innerWidth) x = e.pageX - 290;
+            if (y + 180 > window.innerHeight) y = e.pageY - 190;
+            tt.style('transform', `translate(${x}px, ${y}px)`);
+        }
+
+        function fmtGdp(val) {
+            if (val >= 1000) return `$${(val / 1000).toFixed(1)}k`;
+            return `$${Math.round(val)}`;
+        }
+
+        function onHexHover(e, d) {
+            const key = `${d.x},${d.y}`;
+            const clData = psClusterData.get(currentYear);
+            const cl = clData ? clData.map.get(key) : null;
+            const isActive = clData ? (clData.activeMap.get(key) === 1) : false;
+            const entries = snapshots.get(currentYear) || [];
+            const countries = entries.filter(c => c.bmuX === d.x && c.bmuY === d.y);
+
+            const statusTag = countries.length > 0
+                ? countries.length + ' countries'
+                : isActive ? 'Active (empty)' : 'Propagated';
+
+            let html = `
+                <div class="tt-header">
+                    <span>Neuron (${d.x}, ${d.y})</span>
+                    <span class="tt-tag">${statusTag}</span>
+                </div>
+                <div class="tt-body">`;
+
+            if (cl != null && currentProfile) {
+                const clName = currentProfile.nameOf(cl);
+                const clColor = currentProfile.colorOf(cl);
+                const gdp = currentProfile.gdpOf(cl);
+                html += `
+                    <div class="tt-row">
+                        <span class="tt-label">Cluster</span>
+                        <span class="tt-cluster-badge" style="background:${lightenColor(clColor, 0.85)};color:${shadeColor(clColor, 0.6)}">
+                            #${cl} &middot; ${clName.full}
+                        </span>
+                    </div>
+                    <div class="tt-row">
+                        <span class="tt-label">Cluster Median GDP</span>
+                        <span class="tt-value">${fmtGdp(gdp)}</span>
+                    </div>`;
+            }
+
+            html += `
+                    <div class="tt-row">
+                        <span class="tt-label">Hit Count (total)</span>
+                        <span class="tt-value">${d.hitCount}</span>
+                    </div>`;
+
+            if (countries.length > 0) {
+                html += `<div class="tt-list">
+                    <span class="tt-list-header">Countries (${countries.length})</span>`;
+                countries.slice(0, 8).forEach(c => {
+                    html += `<span class="tt-list-item">
+                        <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${continentColor(c.countryCode)};margin-right:5px;vertical-align:middle;"></span>
+                        ${c.countryName} <span style="color:var(--ink-muted);font-family:var(--font-mono);font-size:10px;">${fmtGdp(c.gdp)}</span>
+                    </span>`;
+                });
+                if (countries.length > 8) {
+                    html += `<span class="tt-list-item" style="font-style:italic;color:var(--ink-muted)">&hellip; and ${countries.length - 8} more</span>`;
+                }
+                html += `</div>`;
+            }
+
+            html += `</div>`;
+            tt.html(html).classed('visible', true);
+        }
+
+        function onMarkerHover(e, d) {
+            const cont = continentOf(d.countryCode);
+            const clData = psClusterData.get(currentYear);
+            const cl = clData ? clData.map.get(`${d.bmuX},${d.bmuY}`) : null;
+
+            let html = `
+                <div class="tt-header">
+                    <span>${d.countryName}</span>
+                    <span class="tt-tag">${d.countryCode}</span>
+                </div>
+                <div class="tt-body">
+                    <div class="tt-row">
+                        <span class="tt-label">Continent</span>
+                        <span class="tt-value" style="color:${continentColor(d.countryCode)}">${cont}</span>
+                    </div>
+                    <div class="tt-row">
+                        <span class="tt-label">GDP per capita</span>
+                        <span class="tt-value">${fmtGdp(d.gdp)}</span>
+                    </div>`;
+
+            if (cl != null && currentProfile) {
+                const clName = currentProfile.nameOf(cl);
+                const clColor = currentProfile.colorOf(cl);
+                html += `
+                    <div class="tt-row">
+                        <span class="tt-label">Snapshot Cluster</span>
+                        <span class="tt-cluster-badge" style="background:${lightenColor(clColor, 0.85)};color:${shadeColor(clColor, 0.6)}">
+                            #${cl} &middot; ${clName.short}
+                        </span>
+                    </div>`;
+            }
+
+            html += `
+                    <div class="tt-row">
+                        <span class="tt-label">Vesanto (Global)</span>
+                        <span class="tt-value">#${d.vesantoCluster}</span>
+                    </div>
+                    <div class="tt-row">
+                        <span class="tt-label">BMU</span>
+                        <span class="tt-value">(${d.bmuX}, ${d.bmuY})</span>
+                    </div>`;
+
+            if (d.urban > 0) {
+                html += `
+                    <div class="tt-row">
+                        <span class="tt-label">Urbanization</span>
+                        <span class="tt-value">${d.urban.toFixed(1)}%</span>
+                    </div>`;
+            }
+
+            html += `</div>`;
+            tt.html(html).classed('visible', true);
+            e.stopPropagation();
+        }
+
+        /* =============================================================
+           Initialize
+           ============================================================= */
+        renderSnapshot(1990);
+
+    })();
+    </script>
+</body>
+
+</html>
