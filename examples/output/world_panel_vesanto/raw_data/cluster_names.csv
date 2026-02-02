@@ -1,50 +1,59 @@
 decade,cluster_id,cluster_name,gdp_centroid,n_neurons
-1990,3,Least Developed,-0.67,1
-1990,2,Least Developed (2),-0.66,20
-1990,1,Low Income,-0.63,7
-1990,7,Low Income (2),-0.57,6
-1990,6,Lower-Middle Income,-0.55,13
-1990,13,Lower-Middle Income (2),-0.5,3
-1990,14,Middle Income,-0.49,1
-1990,11,Middle Income (2),-0.38,10
-1990,5,Upper-Middle Income,-0.35,20
-1990,4,Upper-Middle Income (2),-0.29,5
-1990,12,High Income,-0.15,3
-1990,9,High Income (2),1.09,13
-1990,10,Advanced Economies,1.46,6
-1990,8,Advanced Economies (2),2.86,3
-2000,10,Least Developed,-0.67,1
-2000,9,Least Developed (2),-0.65,22
-2000,8,Least Developed (2),-0.63,6
-2000,15,Low Income,-0.57,6
-2000,13,Low Income (2),-0.52,22
-2000,7,Lower-Middle Income,-0.5,3
-2000,14,Lower-Middle Income (2),-0.41,11
-2000,12,Middle Income,-0.35,14
-2000,11,Middle Income (2),0.11,6
-2000,5,Upper-Middle Income,0.23,17
-2000,6,Upper-Middle Income (2),0.51,10
-2000,2,High Income,0.95,1
-2000,4,High Income (2),1.39,7
-2000,3,Advanced Economies,2.01,10
-2000,1,Advanced Economies (2),3.16,3
-2010,2,Least Developed,-0.65,20
-2010,1,Least Developed (2),-0.63,9
-2010,10,Low Income,-0.59,3
-2010,11,Low Income (2),-0.55,15
-2010,9,Lower-Middle Income,-0.5,3
-2010,8,Lower-Middle Income (2),-0.46,4
-2010,12,Middle Income,-0.4,9
-2010,13,Middle Income (2),-0.24,27
-2010,5,Upper-Middle Income,0.46,8
-2010,7,Upper-Middle Income (2),0.64,8
-2010,6,High Income,0.95,1
-2010,4,High Income (2),1.79,9
-2010,3,Advanced Economies,3.23,4
-2020,1,Least Developed,-0.63,24
-2020,7,Low Income,-0.51,12
-2020,5,Lower-Middle Income,-0.04,23
-2020,6,Middle Income,0.48,9
-2020,4,Upper-Middle Income,0.95,1
-2020,2,High Income,2.36,7
-2020,3,Advanced Economies,3.28,2
+1990,1,Least Developed,-1.38,7
+1990,2,Least Developed (2),-1.08,5
+1990,3,Low Income,-0.97,9
+1990,13,Low Income (2),-0.93,3
+1990,11,Lower-Middle Income,-0.38,7
+1990,12,Lower-Middle Income (2),-0.37,3
+1990,10,Middle Income,-0.29,9
+1990,8,Middle Income (2),-0.24,7
+1990,6,Upper-Middle Income,0.13,9
+1990,9,Upper-Middle Income (2),0.67,5
+1990,7,High Income,0.99,9
+1990,4,High Income (2),1.12,6
+1990,5,Advanced Economies,1.62,1
+2000,1,Least Developed,-1.38,7
+2000,2,Least Developed (2),-1.08,5
+2000,3,Least Developed (2),-0.97,9
+2000,7,Low Income,-0.93,3
+2000,5,Low Income (2),-0.38,7
+2000,6,Lower-Middle Income,-0.37,3
+2000,4,Lower-Middle Income (2),-0.35,11
+2000,8,Middle Income,-0.22,5
+2000,14,Middle Income (2),0.06,6
+2000,15,Upper-Middle Income,0.57,15
+2000,9,Upper-Middle Income (2),0.76,6
+2000,13,High Income,1.12,11
+2000,12,High Income (2),1.23,6
+2000,10,Advanced Economies,1.29,1
+2000,11,Advanced Economies (2),1.62,1
+2010,3,Least Developed,-1.37,6
+2010,1,Least Developed (2),-1.08,5
+2010,2,Least Developed (2),-0.97,9
+2010,11,Low Income,-0.71,4
+2010,15,Low Income (2),-0.5,7
+2010,10,Lower-Middle Income,-0.47,5
+2010,12,Lower-Middle Income (2),-0.22,5
+2010,14,Middle Income,-0.15,5
+2010,9,Middle Income (2),0.1,8
+2010,13,Upper-Middle Income,0.32,10
+2010,8,Upper-Middle Income (2),0.76,6
+2010,5,High Income,1.13,10
+2010,4,High Income (2),1.23,6
+2010,6,Advanced Economies,1.29,1
+2010,7,Advanced Economies (2),1.62,1
+2020,2,Least Developed,-1.5,3
+2020,1,Least Developed (2),-1.08,7
+2020,3,Least Developed (2),-0.88,5
+2020,5,Low Income,-0.87,7
+2020,13,Low Income (2),-0.46,3
+2020,4,Lower-Middle Income,-0.4,2
+2020,6,Lower-Middle Income (2),-0.36,6
+2020,12,Middle Income,0.1,3
+2020,14,Middle Income (2),0.24,8
+2020,7,Upper-Middle Income,0.25,2
+2020,10,Upper-Middle Income (2),1.06,8
+2020,8,High Income,1.06,3
+2020,9,High Income (2),1.27,3
+2020,15,Advanced Economies,1.29,1
+2020,11,Advanced Economies (2),1.62,1

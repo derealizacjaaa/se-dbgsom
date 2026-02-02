@@ -21,10 +21,7 @@ INDICATORS = {
     'SE.PRM.ENRR': 'Primary_school_enrollment_gross_percent',
     'GB.XPD.RSDV.GD.ZS': 'RD_expenditure_percent_of_GDP',
     'FS.AST.PRVT.GD.ZS': 'Domestic_credit_to_private_sector_percent_of_GDP',
-    'SP.DYN.TFRT.IN': 'Fertility_rate_total',
     'BX.KLT.DINV.WD.GD.ZS': 'FDI_net_inflows_percent_of_GDP',
-    'SP.POP.TOTL': 'Population_total',
-    'AG.LND.TOTL.K2': 'Land_area_sq_km'
 }
 
 BASE_URL = "https://api.worldbank.org/v2"

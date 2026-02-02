@@ -84,7 +84,7 @@ def transform_features(df):
     df = df.copy()
 
     transforms = {
-        'GDP_per_capita_constant_2015_US': ('log_rescale', _log_rescale),
+        'GDP_per_capita_constant_2015_US': ('log_rescale', lambda s: _log_rescale(s, 0, 200)),
         'Inflation_consumer_prices_annual_percent': ('signed_log', _signed_log_rescale),
         'Fertility_rate_total': ('minmax', _minmax_rescale),
     }
@@ -112,7 +112,6 @@ def transform_features(df):
 def run_pipeline():
     base_dir = os.path.dirname(os.path.abspath(__file__))
     input_file = os.path.join(base_dir, 'world_panel_1990_2023.csv')
-    cleaned_file = os.path.join(base_dir, 'world_panel_cleaned.csv')
     som_ready_file = os.path.join(base_dir, 'world_panel_som_ready.csv')
 
     print("Running World Panel Data Pipeline...")
@@ -156,12 +155,8 @@ def run_pipeline():
     else:
         print(f"  Warning: {rnd_col} not found in dataset.")
 
-    # 4. Save cleaned (raw values, no transforms)
-    print(f"\nStep 3: Saving cleaned dataset: {cleaned_file}")
-    df_cleaned.to_csv(cleaned_file, index=False)
-
-    # 5. Transform features for SOM training
-    print("\nStep 4: Transforming features for SOM training...")
+    # 4. Transform features for SOM training
+    print("\nStep 3: Transforming features for SOM training...")
     df_som = transform_features(df_cleaned)
 
     print(f"\nSaving SOM-ready dataset: {som_ready_file}")
@@ -169,7 +164,6 @@ def run_pipeline():
 
     print("\nPipeline completed successfully.")
     print("-" * 50)
-    print(f"  Cleaned (raw values): {cleaned_file}")
     print(f"  SOM-ready (transformed): {som_ready_file}")
 
 

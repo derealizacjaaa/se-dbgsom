@@ -2,7 +2,7 @@
 Breast Cancer Dataset Demo - Combined Hexagonal DBGSOM + Vesanto Clustering
 
 Demonstrates:
-- Bayesian hyperparameter optimization for DBGSOM training
+- DBGSOM training with StatisticalError growth threshold
 - Hexagonal grid visualization (expanded U-matrix, component planes, hit map, labels)
 - Vesanto-Alhoniemi hierarchical clustering with Ward's method (Auto k vs True k=2)
 """
@@ -127,28 +127,19 @@ def main():
     df = pd.DataFrame(X, columns=feature_names)
 
     # 2. Train DBGSOM
-    print("\n2. Training DBGSOM with Bayesian hyperparameter optimization...")
+    print("\n2. Training DBGSOM...")
 
-    # Using somewhat larger ranges/neurons for larger dataset
     som = SEDBGSOM(
-        bayesian=True,
-        bayesian_trials=30, # Reduced to 30 for speed on larger dataset
-        bayesian_te_constraint=0.35,
-        bayesian_ranges={
-            'lambda_': (0.5, 3.0),
-            'max_neurons': (100, 200),
-            'n_iter': (150, 300),
-            'init_size': (2, 5),
-        },
+        lambda_=1.75,
+        max_neurons=150,
+        n_iter=225,
+        init_size=(3, 3),
         random_state=42,
     )
     som.fit(df)
 
-    opt = som.optimization_result_
     print(f"   Final neurons: {som.n_neurons_}")
-    print(f"   Best lambda:   {som.lambda_:.3f}")
-    print(f"   QE:            {opt['best_qe']:.4f}")
-    print(f"   TE:            {opt['best_te']:.4f}")
+    print(f"   Lambda:        {som.lambda_:.3f}")
 
     # 3. Vesanto Clustering
     print("\n3. Vesanto-Alhoniemi clustering...")

@@ -9,7 +9,7 @@ Provides simple functions to cluster trained SOM neurons:
 Usage:
     from dbgsom import SEDBGSOM, cluster_acute, cluster_leiden, cluster_vesanto
 
-    som = SEDBGSOM(bayesian=True)
+    som = SEDBGSOM(lambda_=1.5, max_neurons=100, n_iter=200)
     som.fit(X)
 
     # For complex boundaries (moons, circles, irregular shapes)
@@ -74,7 +74,7 @@ def cluster_acute(
     Examples
     --------
     >>> from dbgsom import SEDBGSOM, cluster_acute
-    >>> som = SEDBGSOM(bayesian=True).fit(X)
+    >>> som = SEDBGSOM(lambda_=1.5, max_neurons=100, n_iter=200).fit(X)
     >>>
     >>> # Auto-detect number of clusters
     >>> labels = cluster_acute(som, X)
@@ -133,7 +133,7 @@ def cluster_leiden(
     Examples
     --------
     >>> from dbgsom import SEDBGSOM, cluster_leiden
-    >>> som = SEDBGSOM(bayesian=True).fit(X)
+    >>> som = SEDBGSOM(lambda_=1.5, max_neurons=100, n_iter=200).fit(X)
     >>>
     >>> # Auto with default resolution
     >>> labels = cluster_leiden(som, X)
@@ -212,7 +212,7 @@ def cluster_vesanto(
     Examples
     --------
     >>> from dbgsom import SEDBGSOM, cluster_vesanto
-    >>> som = SEDBGSOM(bayesian=True).fit(X)
+    >>> som = SEDBGSOM(lambda_=1.5, max_neurons=100, n_iter=200).fit(X)
     >>>
     >>> # Auto-detect number of clusters
     >>> labels = cluster_vesanto(som, X)

@@ -73,7 +73,7 @@ class SOMVesantoClustering:
     --------
     >>> from dbgsom import SEDBGSOM
     >>> from dbgsom.clustering import SOMVesantoClustering
-    >>> som = SEDBGSOM(bayesian=True).fit(X)
+    >>> som = SEDBGSOM(lambda_=1.5, max_neurons=100, n_iter=200).fit(X)
     >>>
     >>> # Auto-detect optimal k
     >>> clustering = SOMVesantoClustering()

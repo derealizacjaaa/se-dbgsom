@@ -2,7 +2,7 @@
 Glass Dataset Demo - Combined Hexagonal DBGSOM + Vesanto Clustering
 
 Demonstrates:
-- Bayesian hyperparameter optimization for DBGSOM training
+- DBGSOM training with StatisticalError growth threshold
 - Hexagonal grid visualization
 - Vesanto-Alhoniemi hierarchical clustering
 """
@@ -105,9 +105,8 @@ def main():
     # 2. Train
     print("\n2. Training DBGSOM...")
     som = SEDBGSOM(
-        bayesian=True, bayesian_trials=40, bayesian_te_constraint=0.3,
-        bayesian_ranges={'lambda_': (0.5, 3.0), 'max_neurons': (150, 250), 'n_iter': (200, 300)},
-        random_state=27
+        lambda_=1.75, max_neurons=200, n_iter=250, init_size=(3, 3),
+        random_state=27,
     )
     som.fit(df)
     print(f"   Final neurons: {som.n_neurons_}")

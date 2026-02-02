@@ -2,7 +2,7 @@
 Blobs Dataset Demo - Combined Hexagonal DBGSOM + Vesanto Clustering
 
 Demonstrates:
-- Bayesian hyperparameter optimization for DBGSOM training
+- DBGSOM training with StatisticalError growth threshold
 - Hexagonal grid visualization (expanded U-matrix, component planes, hit map, labels)
 - Vesanto-Alhoniemi hierarchical clustering with Ward's method
 - K evaluation plots (Davies-Bouldin + Silhouette)
@@ -135,29 +135,21 @@ def main():
     df = pd.DataFrame(X, columns=feature_names)
 
     # =========================================================================
-    # 2. Train DBGSOM with Bayesian optimization
+    # 2. Train DBGSOM
     # =========================================================================
-    print("\n2. Training DBGSOM with Bayesian hyperparameter optimization...")
+    print("\n2. Training DBGSOM...")
 
     som = SEDBGSOM(
-        bayesian=True,
-        bayesian_trials=50,
-        bayesian_te_constraint=0.3,
-        bayesian_ranges={
-            'lambda_': (0.5, 2.5),
-            'max_neurons': (100, 150),
-            'n_iter': (150, 250),
-            'init_size': (2, 4),
-        },
+        lambda_=1.5,
+        max_neurons=125,
+        n_iter=200,
+        init_size=(3, 3),
         random_state=27,
     )
     som.fit(df)
 
-    opt = som.optimization_result_
     print(f"   Final neurons: {som.n_neurons_}")
-    print(f"   Best lambda:   {som.lambda_:.3f}")
-    print(f"   QE:            {opt['best_qe']:.4f}")
-    print(f"   TE:            {opt['best_te']:.4f}")
+    print(f"   Lambda:        {som.lambda_:.3f}")
 
     # =========================================================================
     # 3. Vesanto clustering (auto k + true k)

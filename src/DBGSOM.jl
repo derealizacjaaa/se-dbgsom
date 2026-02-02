@@ -128,10 +128,6 @@ export SOMLeidenClustering, cluster_neurons_leiden, find_resolution_for_k
 export find_two_bmus, geodesic_distance
 export compute_topographic_error
 
-# Bayesian optimization
-export BayesianOptConfig, BayesianOptResult
-export bayesian_optimize, get_best_trials, summarize_trials
-
 # Panel data preprocessing
 export PanelData, SlidingWindowResult
 export sliding_windows, n_windows, window_dim
@@ -160,9 +156,6 @@ include("algorithms/dbgsom.jl")
 
 # Visualization
 include("visualization/plotting.jl")
-
-# Bayesian Optimization (after algorithms and visualization for dependencies)
-include("optimization/bayesian.jl")
 
 # Preprocessing
 include("preprocessing/panel.jl")

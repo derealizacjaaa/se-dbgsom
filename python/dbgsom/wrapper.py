@@ -44,24 +44,6 @@ class DBGSOMWrapper:
         Additional arguments passed to DataPreprocessor.
     random_state : int, optional
         Random seed for reproducibility.
-    bayesian : bool, default=False
-        If True, run Bayesian hyperparameter optimization during fit().
-        The provided sf, max_neurons, n_iter, init_size are ignored and
-        optimal values are found automatically using Julia's native implementation.
-        Objective: Minimize QE subject to TE <= bayesian_te_constraint.
-    bayesian_objective : str, default='qe_te'
-        Objective function for Bayesian optimization (kept for API compatibility).
-        Currently only 'qe_te' is supported (minimize QE with TE constraint).
-    bayesian_trials : int, default=30
-        Number of Bayesian optimization trials (only used if bayesian=True).
-    bayesian_te_constraint : float, default=0.25
-        Maximum topographic error allowed during optimization.
-    bayesian_ranges : dict, optional
-        Custom search ranges for Bayesian optimization. Keys:
-        - 'init_size': (min, max) for grid size, default (2, 5)
-        - 'max_neurons': (min, max), default (20, 200)
-        - 'sf': (min, max), default (0.1, 0.9)
-        - 'n_iter': (min, max), default (50, 200)
 
     Attributes
     ----------
@@ -101,11 +83,6 @@ class DBGSOMWrapper:
         preprocess: bool = True,
         preprocessor_kwargs: Optional[Dict] = None,
         random_state: Optional[int] = None,
-        bayesian: bool = False,
-        bayesian_objective: str = 'qe_te',
-        bayesian_trials: int = 30,
-        bayesian_te_constraint: float = 0.25,
-        bayesian_ranges: Optional[Dict] = None
     ):
         self.sf = sf
         self.max_neurons = max_neurons
@@ -114,11 +91,6 @@ class DBGSOMWrapper:
         self.preprocess = preprocess
         self.preprocessor_kwargs = preprocessor_kwargs or {}
         self.random_state = random_state
-        self.bayesian = bayesian
-        self.bayesian_objective = bayesian_objective
-        self.bayesian_trials = bayesian_trials
-        self.bayesian_te_constraint = bayesian_te_constraint
-        self.bayesian_ranges = bayesian_ranges or {}
 
         # Fitted attributes
         self.model_ = None
@@ -126,7 +98,6 @@ class DBGSOMWrapper:
         self.n_features_in_: Optional[int] = None
         self.n_neurons_: Optional[int] = None
         self.feature_names_in_: Optional[List[str]] = None
-        self.optimization_result_: Optional[Dict] = None  # Stores Bayesian opt results
         self._is_fitted = False
 
     def _ensure_julia(self):
@@ -198,114 +169,7 @@ class DBGSOMWrapper:
         if isinstance(X, str):
             X = pd.read_csv(X)
 
-        # Run Bayesian optimization if requested
-        if self.bayesian:
-            return self._fit_with_bayesian(X)
-
         return self._fit_direct(X)
-
-    def _fit_with_bayesian(
-        self,
-        X: Union[pd.DataFrame, np.ndarray]
-    ) -> 'DBGSOMWrapper':
-        """Run Bayesian optimization using Julia implementation."""
-        jl = self._ensure_julia()
-
-        # Prepare data (fit preprocessor here so Julia gets clean data)
-        X_julia = self._prepare_data(X, fit_preprocessor=True)
-        n_features, n_samples = X_julia.shape
-        self.n_features_in_ = n_features
-
-        # Convert to Julia matrix
-        X_jl = numpy_to_julia_matrix(jl, X_julia)
-
-        # Get search ranges (use defaults or user-provided)
-        ranges = self.bayesian_ranges
-        init_size_range = ranges.get('init_size', (2, 5))
-        max_neurons_range = ranges.get('max_neurons', (20, 200))
-        sf_range = ranges.get('sf', (0.1, 0.9))
-        n_iter_range = ranges.get('n_iter', (50, 200))
-
-        # Set random seed if specified
-        if self.random_state is not None:
-            jl.seval(f'Random.seed!({self.random_state})')
-
-        # Call Julia bayesian_optimize
-        result_jl = jl.BasicDBGSOM.bayesian_optimize(
-            X_jl,
-            sf_range=(float(sf_range[0]), float(sf_range[1])),
-            max_neurons_range=(int(max_neurons_range[0]), int(max_neurons_range[1])),
-            n_iter_range=(int(n_iter_range[0]), int(n_iter_range[1])),
-            init_size_range=(int(init_size_range[0]), int(init_size_range[1])),
-            te_constraint=float(self.bayesian_te_constraint),
-            n_trials=int(self.bayesian_trials),
-            n_startup=min(10, self.bayesian_trials // 3),
-            seed=self.random_state if self.random_state is not None else jl.nothing,
-            verbose=True
-        )
-
-        # Extract results from Julia
-        best_model_jl = result_jl.best_model
-        best_params_jl = result_jl.best_params
-        best_qe = float(result_jl.best_qe)
-        best_te = float(result_jl.best_te)
-
-        if best_model_jl is None or best_model_jl == jl.nothing:
-            raise RuntimeError(
-                "Bayesian optimization found no feasible solution. "
-                "Consider relaxing te_constraint or expanding search ranges."
-            )
-
-        # Store the Julia model directly
-        self.model_ = best_model_jl
-
-        # Extract best parameters
-        best_params = {
-            'init_size': (int(best_params_jl[jl.seval(':init_size')][0]),
-                         int(best_params_jl[jl.seval(':init_size')][1])),
-            'max_neurons': int(best_params_jl[jl.seval(':max_neurons')]),
-            'sf': float(best_params_jl[jl.seval(':sf')]),
-            'n_iter': int(best_params_jl[jl.seval(':n_iter')])
-        }
-
-        # Update self with optimal parameters
-        self.sf = best_params['sf']
-        self.max_neurons = best_params['max_neurons']
-        self.n_iter = best_params['n_iter']
-        self.init_size = best_params['init_size']
-
-        # Convert all_trials from Julia to Python
-        all_trials_jl = result_jl.all_trials
-        all_trials = []
-        for t in all_trials_jl:
-            params_jl = t[jl.seval(':params')]
-            init_size_jl = params_jl[jl.seval(':init_size')]
-            all_trials.append({
-                'init_size': (int(init_size_jl[0]), int(init_size_jl[1])),
-                'max_neurons': int(params_jl[jl.seval(':max_neurons')]),
-                'sf': float(params_jl[jl.seval(':sf')]),
-                'n_iter': int(params_jl[jl.seval(':n_iter')]),
-                'qe': float(t[jl.seval(':qe')]),
-                'te': float(t[jl.seval(':te')]),
-                'feasible': bool(t[jl.seval(':feasible')]),
-                'score': float(t[jl.seval(':score')])
-            })
-
-        # Store optimization results
-        self.optimization_result_ = {
-            'best_params': best_params,
-            'best_qe': best_qe,
-            'best_te': best_te,
-            'objective': self.bayesian_objective,
-            'te_constraint': self.bayesian_te_constraint,
-            'all_trials': sorted(all_trials, key=lambda x: x['score'])
-        }
-
-        # Store fitted attributes
-        self.n_neurons_ = int(jl.BasicDBGSOM.n_neurons(self.model_))
-        self._is_fitted = True
-
-        return self
 
     def _fit_direct(
         self,
@@ -926,161 +790,3 @@ class DBGSOMWrapper:
         error = jl.BasicDBGSOM.compute_topographic_error(self.model_, X_jl)
         return float(error)
 
-    @classmethod
-    def bayesian_optimize(
-        cls,
-        X: Union[pd.DataFrame, np.ndarray, str],
-        n_trials: int = 50,
-        init_size_range: Tuple[int, int] = (2, 5),
-        max_neurons_range: Tuple[int, int] = (20, 200),
-        sf_range: Tuple[float, float] = (0.1, 0.9),
-        n_iter_range: Tuple[int, int] = (50, 200),
-        te_constraint: float = 0.25,
-        preprocess: bool = True,
-        preprocessor_kwargs: Optional[Dict] = None,
-        random_state: Optional[int] = None,
-        verbose: bool = True
-    ) -> Dict[str, Any]:
-        """
-        Find optimal hyperparameters using Bayesian optimization (Julia implementation).
-
-        Minimizes Quantization Error (QE) subject to Topographic Error (TE) <= te_constraint.
-
-        Parameters
-        ----------
-        X : DataFrame, ndarray, or str
-            Training data.
-        n_trials : int, default=50
-            Number of optimization trials.
-        init_size_range : tuple of int, default=(2, 5)
-            Range for initial grid size (both dimensions).
-        max_neurons_range : tuple of int, default=(20, 200)
-            Range for maximum neurons.
-        sf_range : tuple of float, default=(0.1, 0.9)
-            Range for spreading factor.
-        n_iter_range : tuple of int, default=(50, 200)
-            Range for number of iterations.
-        te_constraint : float, default=0.25
-            Maximum topographic error allowed.
-        preprocess : bool, default=True
-            Whether to preprocess data.
-        preprocessor_kwargs : dict, optional
-            Arguments for preprocessor.
-        random_state : int, optional
-            Random seed for reproducibility.
-        verbose : bool, default=True
-            Whether to show progress.
-
-        Returns
-        -------
-        result : dict
-            - 'best_params': Best hyperparameters found
-            - 'best_qe': Best quantization error achieved
-            - 'best_te': Topographic error of best model
-            - 'best_model': Fitted DBGSOMWrapper with best parameters
-            - 'all_trials': List of all trial results
-        """
-        # Create a temporary instance to access Julia
-        temp_instance = cls(
-            preprocess=preprocess,
-            preprocessor_kwargs=preprocessor_kwargs,
-            random_state=random_state
-        )
-        jl = temp_instance._ensure_julia()
-
-        # Load data
-        if isinstance(X, str):
-            X = pd.read_csv(X)
-
-        # Prepare data using the temporary instance
-        X_julia = temp_instance._prepare_data(X, fit_preprocessor=True)
-
-        # Convert to Julia matrix
-        X_jl = numpy_to_julia_matrix(jl, X_julia)
-
-        # Set random seed if specified
-        if random_state is not None:
-            jl.seval(f'Random.seed!({random_state})')
-
-        # Call Julia bayesian_optimize
-        result_jl = jl.BasicDBGSOM.bayesian_optimize(
-            X_jl,
-            sf_range=(float(sf_range[0]), float(sf_range[1])),
-            max_neurons_range=(int(max_neurons_range[0]), int(max_neurons_range[1])),
-            n_iter_range=(int(n_iter_range[0]), int(n_iter_range[1])),
-            init_size_range=(int(init_size_range[0]), int(init_size_range[1])),
-            te_constraint=float(te_constraint),
-            n_trials=int(n_trials),
-            n_startup=min(10, n_trials // 3),
-            seed=random_state if random_state is not None else jl.nothing,
-            verbose=verbose
-        )
-
-        # Extract results from Julia
-        best_model_jl = result_jl.best_model
-        best_params_jl = result_jl.best_params
-        best_qe = float(result_jl.best_qe)
-        best_te = float(result_jl.best_te)
-
-        if best_model_jl is None or best_model_jl == jl.nothing:
-            return {
-                'best_params': None,
-                'best_qe': float('inf'),
-                'best_te': float('inf'),
-                'best_model': None,
-                'all_trials': [],
-                'error': 'No feasible solution found'
-            }
-
-        # Extract best parameters
-        best_params = {
-            'init_size': (int(best_params_jl[jl.seval(':init_size')][0]),
-                         int(best_params_jl[jl.seval(':init_size')][1])),
-            'max_neurons': int(best_params_jl[jl.seval(':max_neurons')]),
-            'sf': float(best_params_jl[jl.seval(':sf')]),
-            'n_iter': int(best_params_jl[jl.seval(':n_iter')])
-        }
-
-        # Create a wrapper with the best model
-        best_wrapper = cls(
-            sf=best_params['sf'],
-            max_neurons=best_params['max_neurons'],
-            n_iter=best_params['n_iter'],
-            init_size=best_params['init_size'],
-            preprocess=preprocess,
-            preprocessor_kwargs=preprocessor_kwargs,
-            random_state=random_state
-        )
-        best_wrapper.model_ = best_model_jl
-        best_wrapper.preprocessor_ = temp_instance.preprocessor_
-        best_wrapper.n_features_in_ = temp_instance.n_features_in_
-        best_wrapper.feature_names_in_ = temp_instance.feature_names_in_
-        best_wrapper.n_neurons_ = int(jl.BasicDBGSOM.n_neurons(best_model_jl))
-        best_wrapper._is_fitted = True
-
-        # Convert all_trials from Julia to Python
-        all_trials_jl = result_jl.all_trials
-        all_trials = []
-        for t in all_trials_jl:
-            params_jl = t[jl.seval(':params')]
-            init_size_jl = params_jl[jl.seval(':init_size')]
-            all_trials.append({
-                'params': {
-                    'init_size': (int(init_size_jl[0]), int(init_size_jl[1])),
-                    'max_neurons': int(params_jl[jl.seval(':max_neurons')]),
-                    'sf': float(params_jl[jl.seval(':sf')]),
-                    'n_iter': int(params_jl[jl.seval(':n_iter')])
-                },
-                'qe': float(t[jl.seval(':qe')]),
-                'te': float(t[jl.seval(':te')]),
-                'feasible': bool(t[jl.seval(':feasible')]),
-                'score': float(t[jl.seval(':score')])
-            })
-
-        return {
-            'best_params': best_params,
-            'best_qe': best_qe,
-            'best_te': best_te,
-            'best_model': best_wrapper,
-            'all_trials': sorted(all_trials, key=lambda x: x['score'])
-        }

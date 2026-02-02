@@ -11,7 +11,7 @@ Example
 >>> from dbgsom import SEDBGSOM, cluster_acute, cluster_leiden, cluster_vesanto
 >>>
 >>> # Train SE-DBGSOM
->>> som = SEDBGSOM(bayesian=True)
+>>> som = SEDBGSOM(lambda_=1.5, max_neurons=100, n_iter=200)
 >>> som.fit(X)
 >>>
 >>> # ACUTE for complex shapes

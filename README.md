@@ -30,7 +30,7 @@ pip install -e "python/[viz]"  # with matplotlib/seaborn
 from dbgsom import SEDBGSOM, cluster_acute, cluster_leiden, cluster_vesanto
 
 # Train
-som = SEDBGSOM(bayesian=True, bayesian_te_constraint=0.25)
+som = SEDBGSOM(lambda_=1.5, max_neurons=100, n_iter=200)
 som.fit(X)
 
 # Cluster (pick one method)
@@ -79,7 +79,7 @@ coords = transform(som, data)      # 2D coordinates
 ```
 src/                        # Julia core (BasicDBGSOM module)
 ├── core/                   # types.jl, topology.jl
-├── optimization/           # distance.jl, neighborhood.jl, bmu.jl, batch_update.jl, bayesian.jl
+├── optimization/           # distance.jl, neighborhood.jl, bmu.jl, batch_update.jl
 ├── algorithms/             # dbgsom.jl, growth.jl
 ├── visualization/          # plotting.jl
 └── preprocessing/          # panel.jl (time-series/panel data)

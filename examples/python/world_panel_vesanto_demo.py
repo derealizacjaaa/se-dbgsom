@@ -4,7 +4,7 @@ World Panel Vesanto Demo: 3-Year Sliding Windows + Per-Decade Clustering
 Workflow:
 1. Load World Bank economic indicators (176 countries, 1990-2023)
 2. Create 3-year sliding windows (step=2, no normalization)
-3. Train SE-DBGSOM with Bayesian optimization on ALL windows
+3. Train SE-DBGSOM on ALL windows
 4. Per-decade Vesanto clustering: for each decade (1990, 2000, 2010, 2020),
    gather ALL active neurons from every even year in that decade, cluster once
 5. For each even year snapshot: assign countries their BMU's decade cluster
@@ -612,7 +612,7 @@ def main():
     print()
 
     # Paths
-    data_path = Path(__file__).parent.parent.parent / "world_panel" / "world_panel_cleaned.csv"
+    data_path = Path(__file__).parent.parent.parent / "world_panel" / "world_panel_som_ready.csv"
     output_dir = Path(__file__).parent.parent / "output" / "world_panel_vesanto"
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -639,33 +639,25 @@ def main():
     print(f"  NaN values: {np.isnan(X).sum()} ({np.isnan(X).mean():.1%} of entries)")
 
     # =========================================================================
-    # Step 3: Train SE-DBGSOM with Bayesian Optimization
+    # Step 3: Train SE-DBGSOM
     # =========================================================================
     print("-" * 70)
-    print("Step 3: Training SE-DBGSOM with Bayesian Optimization")
+    print("Step 3: Training SE-DBGSOM")
     print("-" * 70)
 
     som = SEDBGSOM(
-        bayesian=True,
-        bayesian_trials=20,
-        bayesian_te_constraint=0.30,
-        bayesian_ranges={
-            'lambda_': (2, 6),
-            'max_neurons': (100, 150),
-            'n_iter': (200, 250),
-            'init_size': (2, 5),
-        },
-        random_state=27,
+        lambda_=2,
+        max_neurons=100,
+        n_iter=200,
+        init_size=(2, 2),
+        random_state=19,
     )
     som.fit(X)
 
-    opt = som.optimization_result_
     print()
     print("Training Results:")
     print(f"  Neurons: {som.n_neurons_}")
     print(f"  Lambda:  {som.lambda_:.3f}")
-    print(f"  QE:      {opt['best_qe']:.4f}")
-    print(f"  TE:      {opt['best_te']:.4f}")
 
     # =========================================================================
     # Step 4: Per-Decade Vesanto Clustering + Snapshot Assignment

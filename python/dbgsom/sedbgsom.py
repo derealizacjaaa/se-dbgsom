@@ -50,37 +50,19 @@ class SEDBGSOM:
     random_state : int, optional
         Random seed for reproducibility.
 
-    Bayesian Optimization Parameters
-    --------------------------------
-    bayesian : bool, default=False
-        If True, run Bayesian optimization to find optimal parameters.
-        Objective: Minimize QE subject to TE <= te_constraint.
-    bayesian_trials : int, default=30
-        Number of optimization trials.
-    bayesian_te_constraint : float, default=0.25
-        Maximum topographic error allowed (default 25%).
-    bayesian_ranges : dict, optional
-        Custom search ranges:
-        - 'lambda_': (min, max), default (0.3, 2.0)
-        - 'max_neurons': (min, max), default (50, 200)
-        - 'n_iter': (min, max), default (50, 200)
-        - 'init_size': (min, max), default (2, 5)
-
     Attributes
     ----------
     model_ : Julia DBGSOM object
         The underlying Julia model (after fitting).
     n_neurons_ : int
         Number of neurons after training.
-    optimization_result_ : dict
-        Results from Bayesian optimization (if used).
 
     Examples
     --------
     >>> from dbgsom import SEDBGSOM, cluster_acute, cluster_leiden
     >>>
     >>> # Train model
-    >>> som = SEDBGSOM(max_neurons=100, bayesian=True)
+    >>> som = SEDBGSOM(lambda_=1.5, max_neurons=100, n_iter=200)
     >>> som.fit(X)
     >>>
     >>> # Cluster with ACUTE (good for non-convex shapes)
@@ -99,10 +81,6 @@ class SEDBGSOM:
         preprocess: bool = True,
         preprocessor_kwargs: Optional[Dict] = None,
         random_state: Optional[int] = None,
-        bayesian: bool = False,
-        bayesian_trials: int = 30,
-        bayesian_te_constraint: float = 0.25,
-        bayesian_ranges: Optional[Dict] = None
     ):
         self.lambda_ = lambda_
         self.max_neurons = max_neurons
@@ -111,10 +89,6 @@ class SEDBGSOM:
         self.preprocess = preprocess
         self.preprocessor_kwargs = preprocessor_kwargs or {}
         self.random_state = random_state
-        self.bayesian = bayesian
-        self.bayesian_trials = bayesian_trials
-        self.bayesian_te_constraint = bayesian_te_constraint
-        self.bayesian_ranges = bayesian_ranges or {}
 
         # Fitted attributes
         self.model_ = None
@@ -122,7 +96,6 @@ class SEDBGSOM:
         self.n_features_in_: Optional[int] = None
         self.n_neurons_: Optional[int] = None
         self.feature_names_in_: Optional[List[str]] = None
-        self.optimization_result_: Optional[Dict] = None
         self._is_fitted = False
 
     def _ensure_julia(self):
@@ -184,85 +157,7 @@ class SEDBGSOM:
         if isinstance(X, str):
             X = pd.read_csv(X)
 
-        if self.bayesian:
-            return self._fit_with_bayesian(X)
         return self._fit_direct(X)
-
-    def _fit_with_bayesian(self, X: Union[pd.DataFrame, np.ndarray]) -> 'SEDBGSOM':
-        """Run Bayesian optimization with StatisticalError method."""
-        jl = self._ensure_julia()
-
-        X_julia = self._prepare_data(X, fit_preprocessor=True)
-        n_features, n_samples = X_julia.shape
-        self.n_features_in_ = n_features
-
-        X_jl = numpy_to_julia_matrix(jl, X_julia)
-
-        # Get search ranges
-        ranges = self.bayesian_ranges
-        lambda_range = ranges.get('lambda_', (0.3, 2.0))
-        max_neurons_range = ranges.get('max_neurons', (50, 200))
-        n_iter_range = ranges.get('n_iter', (50, 200))
-        init_size_range = ranges.get('init_size', (2, 5))
-
-        if self.random_state is not None:
-            jl.seval(f'Random.seed!({self.random_state})')
-
-        # Call Julia bayesian_optimize with StatisticalError method
-        result_jl = jl.BasicDBGSOM.bayesian_optimize(
-            X_jl,
-            gt_method_type=jl.seval(':statistical_error'),
-            lambda_range=(float(lambda_range[0]), float(lambda_range[1])),
-            max_neurons_range=(int(max_neurons_range[0]), int(max_neurons_range[1])),
-            n_iter_range=(int(n_iter_range[0]), int(n_iter_range[1])),
-            init_size_range=(int(init_size_range[0]), int(init_size_range[1])),
-            te_constraint=float(self.bayesian_te_constraint),
-            n_trials=int(self.bayesian_trials),
-            n_startup=min(10, self.bayesian_trials // 3),
-            seed=self.random_state if self.random_state is not None else jl.nothing,
-            verbose=True
-        )
-
-        best_model_jl = result_jl.best_model
-        best_params_jl = result_jl.best_params
-        best_qe = float(result_jl.best_qe)
-        best_te = float(result_jl.best_te)
-
-        if best_model_jl is None or best_model_jl == jl.nothing:
-            raise RuntimeError(
-                "Bayesian optimization found no feasible solution. "
-                "Consider relaxing te_constraint or expanding search ranges."
-            )
-
-        self.model_ = best_model_jl
-
-        # Extract best parameters
-        best_params = {
-            'init_size': (int(best_params_jl[jl.seval(':init_size')][0]),
-                         int(best_params_jl[jl.seval(':init_size')][1])),
-            'max_neurons': int(best_params_jl[jl.seval(':max_neurons')]),
-            'lambda_': float(best_params_jl[jl.seval(':lambda')]),
-            'n_iter': int(best_params_jl[jl.seval(':n_iter')])
-        }
-
-        # Update self with optimal parameters
-        self.lambda_ = best_params['lambda_']
-        self.max_neurons = best_params['max_neurons']
-        self.n_iter = best_params['n_iter']
-        self.init_size = best_params['init_size']
-
-        # Store optimization results
-        self.optimization_result_ = {
-            'best_params': best_params,
-            'best_qe': best_qe,
-            'best_te': best_te,
-            'te_constraint': self.bayesian_te_constraint,
-        }
-
-        self.n_neurons_ = int(jl.BasicDBGSOM.n_neurons(self.model_))
-        self._is_fitted = True
-
-        return self
 
     def _fit_direct(self, X: Union[pd.DataFrame, np.ndarray]) -> 'SEDBGSOM':
         """Fit directly with current parameters using StatisticalError."""
@@ -503,12 +398,6 @@ class SEDBGSOM:
 
         bounds = self.get_grid_bounds()
         lines.append(f"  Grid bounds: x=[{bounds[0][0]}, {bounds[0][1]}], y=[{bounds[1][0]}, {bounds[1][1]}]")
-
-        if self.optimization_result_:
-            lines.append("")
-            lines.append("Bayesian optimization:")
-            lines.append(f"  Best QE: {self.optimization_result_['best_qe']:.4f}")
-            lines.append(f"  Best TE: {self.optimization_result_['best_te']:.4f}")
 
         return "\n".join(lines)
 

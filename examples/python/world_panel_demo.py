@@ -448,26 +448,18 @@ def main():
     print("-" * 70)
 
     som = SEDBGSOM(
-        bayesian=True,
-        bayesian_trials=25,
-        bayesian_te_constraint=0.35,  # relaxed for high-dim data
-        bayesian_ranges={
-            'lambda_': (2, 10),
-            'max_neurons': (250, 250),
-            'n_iter': (100, 150),
-            'init_size': (2, 2)
-        },
-        random_state=42
+        lambda_=6.0,
+        max_neurons=250,
+        n_iter=125,
+        init_size=(3, 3),
+        random_state=42,
     )
     som.fit(X)
 
-    opt = som.optimization_result_
     print()
     print("Training Results:")
     print(f"  Neurons: {som.n_neurons_}")
     print(f"  Lambda:  {som.lambda_:.3f}")
-    print(f"  QE:      {opt['best_qe']:.4f}")
-    print(f"  TE:      {opt['best_te']:.4f}")
 
     # =========================================================================
     # Step 4: Create Yearly Snapshots with Clustering

@@ -16,7 +16,7 @@ Neural network library for unsupervised learning, clustering, and dimensionality
 ```
 src/                        # Julia core (BasicDBGSOM module)
 ├── core/                   # types.jl, topology.jl
-├── optimization/           # distance.jl, neighborhood.jl, bmu.jl, batch_update.jl, bayesian.jl, nan_handling.jl
+├── optimization/           # distance.jl, neighborhood.jl, bmu.jl, batch_update.jl, nan_handling.jl
 ├── algorithms/             # dbgsom.jl, growth.jl
 ├── visualization/          # plotting.jl
 └── preprocessing/          # panel.jl (time-series/panel data)
@@ -73,7 +73,7 @@ pip install -e "python/[viz]"  # with matplotlib/seaborn
 from dbgsom import SEDBGSOM, cluster_acute, cluster_leiden, cluster_vesanto
 
 # Train
-som = SEDBGSOM(bayesian=True, bayesian_te_constraint=0.25)
+som = SEDBGSOM(lambda_=1.5, max_neurons=100, n_iter=200)
 som.fit(X)
 
 # Cluster (pick one method)
@@ -139,7 +139,6 @@ All code paths (training, pruning, error accumulation, prediction) use the same 
 | `src/algorithms/dbgsom.jl` | fit!, predict, transform |
 | `src/optimization/bmu.jl` | BMU finding, dispatch_find_bmus |
 | `src/optimization/nan_handling.jl` | NaN-weighted distances, neighbor imputation |
-| `src/optimization/bayesian.jl` | Bayesian hyperparameter optimization |
 | `python/dbgsom/sedbgsom.py` | SEDBGSOM class |
 | `python/dbgsom/clustering/` | **Real clustering implementations** |
 

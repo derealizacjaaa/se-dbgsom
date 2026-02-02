@@ -2,7 +2,7 @@
 SE-DBGSOM - Statistical Error Dynamic Batch Growing Self-Organizing Map.
 
 A two-part workflow:
-1. Training: Use SEDBGSOM (always StatisticalError method, optional Bayesian tuning)
+1. Training: Use SEDBGSOM (always StatisticalError method)
 2. Clustering: Use cluster_acute(), cluster_leiden(), or cluster_vesanto() separately
 
 Example
@@ -10,7 +10,7 @@ Example
 >>> from dbgsom import SEDBGSOM, cluster_acute, cluster_leiden, cluster_vesanto
 >>>
 >>> # Part 1: Train the model
->>> som = SEDBGSOM(bayesian=True, bayesian_te_constraint=0.25)
+>>> som = SEDBGSOM(lambda_=1.5, max_neurons=100, n_iter=200)
 >>> som.fit(X)
 >>>
 >>> # Part 2a: Cluster with ACUTE (non-convex shapes)
