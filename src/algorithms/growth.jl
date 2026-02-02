@@ -59,6 +59,49 @@ accumulate_errors!(som::DBGSOM{T}, X::AbstractMatrix{T},
                    bmus::Vector{Tuple{Int,Int}}) where T =
     accumulate_errors!(som.topology, X, bmus)
 
+"""
+    accumulate_errors!(topo, X, bmus, miss_info)
+
+Accumulate quantization errors using missingness-weighted distances when
+`miss_info` is provided. Falls back to standard distances when `miss_info`
+is `nothing`.
+"""
+function accumulate_errors!(topo::SOMTopology{T}, X::AbstractMatrix{T},
+                            bmus::Vector{Tuple{Int,Int}},
+                            miss_info::Union{Nothing, MissingnessInfo{T}}) where T
+    if miss_info === nothing
+        return accumulate_errors!(topo, X, bmus)
+    end
+
+    n_samples = size(X, 2)
+
+    @inbounds for i in 1:n_samples
+        pos = bmus[i]
+        neuron = topo.neurons[pos]
+        x = view(X, :, i)
+
+        # Compute distance using missingness-weighted metric
+        dist_sq = if any(isnan, x)
+            euclidean_squared_nan_weighted(neuron.weights, x, miss_info)
+        else
+            euclidean_squared(neuron.weights, x)
+        end
+
+        dist = sqrt(dist_sq)
+
+        # Only accumulate if distance is valid
+        if !isnan(dist) && dist < typemax(T)
+            neuron.error += dist
+            neuron.hits += 1
+        end
+    end
+end
+
+accumulate_errors!(som::DBGSOM{T}, X::AbstractMatrix{T},
+                   bmus::Vector{Tuple{Int,Int}},
+                   miss_info::Union{Nothing, MissingnessInfo{T}}) where T =
+    accumulate_errors!(som.topology, X, bmus, miss_info)
+
 # ============================================================================
 # Error Distribution
 # ============================================================================

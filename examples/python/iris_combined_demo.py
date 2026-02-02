@@ -137,14 +137,14 @@ def main():
     som = SEDBGSOM(
         bayesian=True,
         bayesian_trials=50,
-        bayesian_te_constraint=0.3,
+        bayesian_te_constraint=0.25,
         bayesian_ranges={
             'lambda_': (0.5, 2.5),
-            'max_neurons': (100, 150),
+            'max_neurons': (80, 120),
             'n_iter': (150, 250),
             'init_size': (2, 4),
         },
-        random_state=27,
+        random_state=18,
     )
     som.fit(df)
 

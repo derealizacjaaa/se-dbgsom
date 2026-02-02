@@ -16,10 +16,15 @@ Neural network library for unsupervised learning, clustering, and dimensionality
 ```
 src/                        # Julia core (BasicDBGSOM module)
 ├── core/                   # types.jl, topology.jl
-├── optimization/           # distance.jl, neighborhood.jl, bmu.jl, batch_update.jl, bayesian.jl
+├── optimization/           # distance.jl, neighborhood.jl, bmu.jl, batch_update.jl, bayesian.jl, nan_handling.jl
 ├── algorithms/             # dbgsom.jl, growth.jl
 ├── visualization/          # plotting.jl
 └── preprocessing/          # panel.jl (time-series/panel data)
+
+test/                       # Julia test suite
+├── runtests.jl            # Test runner
+├── test_nan_handling.jl   # NaN-aware training tests
+└── test_qe_te.jl          # QE/TE quality metric tests
 
 python/dbgsom/              # Python wrapper
 ├── sedbgsom.py            # SEDBGSOM class (recommended)
@@ -116,13 +121,24 @@ coords = transform(som, data)      # 2D coordinates
 1. **Coarse (50%)**: Large neighborhood, neuron growth enabled
 2. **Fine (50%)**: Small neighborhood, weight refinement only
 
+### NaN-Aware Training
+When input data contains NaN values, the library automatically:
+1. Computes per-variable missingness rates (`MissingnessInfo`)
+2. Uses missingness-weighted distances for BMU finding (high-missingness dims contribute less)
+3. Imputes poorly-observed neuron dimensions from SOM grid neighbors
+4. Stores `MissingnessInfo` on the trained model for consistent prediction
+
+All code paths (training, pruning, error accumulation, prediction) use the same weighted metric via `dispatch_find_bmus`.
+
 ## Important Files
 
 | File | Purpose |
 |------|---------|
 | `src/DBGSOM.jl` | Julia module entry point |
-| `src/core/types.jl` | Neuron, SOMTopology, DBGSOM structs |
+| `src/core/types.jl` | Neuron, SOMTopology, DBGSOM, MissingnessInfo structs |
 | `src/algorithms/dbgsom.jl` | fit!, predict, transform |
+| `src/optimization/bmu.jl` | BMU finding, dispatch_find_bmus |
+| `src/optimization/nan_handling.jl` | NaN-weighted distances, neighbor imputation |
 | `src/optimization/bayesian.jl` | Bayesian hyperparameter optimization |
 | `python/dbgsom/sedbgsom.py` | SEDBGSOM class |
 | `python/dbgsom/clustering/` | **Real clustering implementations** |
@@ -132,8 +148,14 @@ coords = transform(som, data)      # 2D coordinates
 ### Julia
 - `T<:AbstractFloat` for numeric generics
 - Functions modifying state end with `!` (fit!, grow!)
-- BLAS for distance computations
+- BLAS for distance computations (falls back to pure Julia loops for NaN-weighted distances)
 - Neurons in `Dict{Tuple{Int,Int}, Neuron}`
+- Use `dispatch_find_bmus(topo, X, miss_info)` for NaN-aware BMU finding (centralizes dispatch logic)
+
+### Running Tests
+```bash
+julia --project=. test/runtests.jl
+```
 
 ### Python
 - NumPy arrays: samples x features

@@ -95,6 +95,26 @@ StatisticalError(lambda::Real) = StatisticalError(Float64(lambda))
 StatisticalError{T}() where T = StatisticalError{T}(one(T))  # Default lambda=1.0
 
 # ============================================================================
+# Missingness Information
+# ============================================================================
+
+"""
+    MissingnessInfo{T}
+
+Per-variable missingness statistics computed from training data.
+
+# Fields
+- `rates::Vector{T}`: Per-dimension missingness rate in [0, 1]
+- `obs_weights::Vector{T}`: Per-dimension observation weight = (1 - rate)²
+- `n_samples::Int`: Total number of samples used to compute rates
+"""
+struct MissingnessInfo{T<:AbstractFloat}
+    rates::Vector{T}
+    obs_weights::Vector{T}
+    n_samples::Int
+end
+
+# ============================================================================
 # SOMTopology
 # ============================================================================
 
@@ -175,6 +195,7 @@ mutable struct DBGSOM{T<:AbstractFloat}
     max_neurons::Int
     n_iter::Int
     trained::Bool
+    missingness_info::Union{Nothing, MissingnessInfo{T}}
 end
 
 """
@@ -228,7 +249,7 @@ function DBGSOM{T}(;
 
     topology = SOMTopology{T}(input_dim=input_dim, init_size=init_size)
 
-    DBGSOM{T}(topology, method, max_neurons, n_iter, false)
+    DBGSOM{T}(topology, method, max_neurons, n_iter, false, nothing)
 end
 
 # Convenience constructor (Float64 default)
@@ -266,7 +287,7 @@ end
 
 # Allow propertynames to show sf for SpreadingFactor method
 function Base.propertynames(som::DBGSOM, private::Bool=false)
-    base = (:topology, :gt_method, :max_neurons, :n_iter, :trained)
+    base = (:topology, :gt_method, :max_neurons, :n_iter, :trained, :missingness_info)
     if som.gt_method isa SpreadingFactor
         return (base..., :sf)
     else

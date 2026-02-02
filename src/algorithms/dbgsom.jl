@@ -34,18 +34,28 @@ function fit!(som::DBGSOM{T}, X::AbstractMatrix{T}) where T
     # Pass X for StatisticalError; SpreadingFactor will ignore it
     gt = compute_growth_threshold(som, X)
 
+    # Compute missingness info for NaN-aware training
+    miss_info = if has_nan(X)
+        compute_missingness_info(X)
+    else
+        nothing
+    end
+
     # Split into coarse and fine phases
     n_coarse = div(som.n_iter, 2)
     n_fine = som.n_iter - n_coarse
 
     # === Phase 1: Coarse training with growth ===
-    _train_coarse!(som, X, gt, n_coarse)
+    _train_coarse!(som, X, gt, n_coarse, miss_info)
 
     # === Phase 2: Fine training (no growth) ===
-    _train_fine!(som, X, n_fine)
+    _train_fine!(som, X, n_fine, miss_info)
 
     # === Cleanup: Prune dead neurons ===
-    _prune!(som, X)
+    _prune!(som, X, miss_info)
+
+    # Store missingness info for downstream use (prediction, clustering)
+    som.missingness_info = miss_info
 
     som.trained = true
     return som
@@ -59,7 +69,8 @@ Coarse training phase with growth.
 σ is computed once at the start from initial grid size,
 then decays linearly throughout the phase.
 """
-function _train_coarse!(som::DBGSOM{T}, X::AbstractMatrix{T}, gt::T, n_epochs::Int) where T
+function _train_coarse!(som::DBGSOM{T}, X::AbstractMatrix{T}, gt::T, n_epochs::Int,
+                        miss_info::Union{Nothing, MissingnessInfo{T}}=nothing) where T
     if n_epochs <= 0
         return
     end
@@ -71,13 +82,18 @@ function _train_coarse!(som::DBGSOM{T}, X::AbstractMatrix{T}, gt::T, n_epochs::I
         # Linear decay of σ
         σ = decay_sigma(epoch, n_epochs, σ_start, σ_end)
 
-        # Find BMUs and update weights
-        bmus = find_bmus(som, X)
-        update_weights_batch!(som, X, bmus, σ)
+        bmus = dispatch_find_bmus(som.topology, X, miss_info)
+
+        # Update weights
+        if miss_info !== nothing
+            update_weights_batch_nan_impute!(som.topology, X, bmus, σ, miss_info)
+        else
+            update_weights_batch!(som, X, bmus, σ)
+        end
 
         # Accumulate errors
         reset_errors!(som)
-        accumulate_errors!(som, X, bmus)
+        accumulate_errors!(som, X, bmus, miss_info)
 
         # Distribute errors from non-boundary to boundary neurons
         distribute_errors!(som, gt)
@@ -94,7 +110,8 @@ Fine training phase without growth.
 
 σ continues to decay to allow fine-tuning of weights.
 """
-function _train_fine!(som::DBGSOM{T}, X::AbstractMatrix{T}, n_epochs::Int) where T
+function _train_fine!(som::DBGSOM{T}, X::AbstractMatrix{T}, n_epochs::Int,
+                      miss_info::Union{Nothing, MissingnessInfo{T}}=nothing) where T
     if n_epochs <= 0
         return
     end
@@ -106,8 +123,14 @@ function _train_fine!(som::DBGSOM{T}, X::AbstractMatrix{T}, n_epochs::Int) where
     for epoch in 1:n_epochs
         σ = decay_sigma(epoch, n_epochs, σ_fine_start, σ_fine_end)
 
-        bmus = find_bmus(som, X)
-        update_weights_batch!(som, X, bmus, σ)
+        bmus = dispatch_find_bmus(som.topology, X, miss_info)
+
+        # Update weights
+        if miss_info !== nothing
+            update_weights_batch_nan_impute!(som.topology, X, bmus, σ, miss_info)
+        else
+            update_weights_batch!(som, X, bmus, σ)
+        end
     end
 end
 
@@ -116,11 +139,12 @@ end
 
 Final pruning step to remove dead neurons.
 """
-function _prune!(som::DBGSOM{T}, X::AbstractMatrix{T}) where T
+function _prune!(som::DBGSOM{T}, X::AbstractMatrix{T},
+                 miss_info::Union{Nothing, MissingnessInfo{T}}=nothing) where T
     # Update hit counts
     reset_errors!(som)
-    bmus = find_bmus(som, X)
-    accumulate_errors!(som, X, bmus)
+    bmus = dispatch_find_bmus(som.topology, X, miss_info)
+    accumulate_errors!(som, X, bmus, miss_info)
 
     # Remove dead neurons
     prune_dead_neurons!(som)
@@ -144,7 +168,7 @@ Vector of BMU grid positions
 """
 function predict(som::DBGSOM{T}, X::AbstractMatrix{T}) where T
     @assert som.trained "Model must be trained before prediction"
-    return find_bmus(som, X)
+    return dispatch_find_bmus(som.topology, X, som.missingness_info)
 end
 
 """
@@ -162,7 +186,7 @@ Return BMU coordinates as 2 × n_samples matrix.
 function transform(som::DBGSOM{T}, X::AbstractMatrix{T}) where T
     @assert som.trained "Model must be trained before transform"
 
-    bmus = find_bmus(som, X)
+    bmus = dispatch_find_bmus(som.topology, X, som.missingness_info)
     coords = Matrix{Int}(undef, 2, length(bmus))
 
     for (i, pos) in enumerate(bmus)
@@ -180,5 +204,10 @@ Return BMU positions and distances for each sample.
 """
 function predict_with_distances(som::DBGSOM{T}, X::AbstractMatrix{T}) where T
     @assert som.trained "Model must be trained before prediction"
-    return find_bmus_with_distances(som, X)
+    miss_info = som.missingness_info
+    if miss_info !== nothing
+        return find_bmus_with_distances(som.topology, X, miss_info)
+    else
+        return find_bmus_with_distances(som, X)
+    end
 end

@@ -97,6 +97,47 @@ end
 find_bmus(som::DBGSOM{T}, X::AbstractMatrix{T}) where T = find_bmus(som.topology, X)
 
 """
+    find_bmus(topo, X, miss_info) -> Vector{Tuple{Int,Int}}
+
+Find BMUs using missingness-weighted distances when NaN data is present.
+Falls back to standard distance when miss_info is nothing or data has no NaN.
+"""
+function find_bmus(topo::SOMTopology{T}, X::AbstractMatrix{T},
+                   miss_info::MissingnessInfo{T}) where T
+    n_samples = size(X, 2)
+    pos_list, W = get_positions_and_weights(topo)
+
+    D = if has_nan(X)
+        pairwise_distances_squared_nan_weighted(Matrix(X), W, miss_info)
+    else
+        pairwise_distances_squared(Matrix(X), W)
+    end
+
+    bmus = Vector{Tuple{Int,Int}}(undef, n_samples)
+    @inbounds for i in 1:n_samples
+        idx = find_bmu_idx(view(D, i, :))
+        bmus[i] = pos_list[idx]
+    end
+
+    return bmus
+end
+
+"""
+    dispatch_find_bmus(topo, X, miss_info) -> Vector{Tuple{Int,Int}}
+
+Centralized NaN-aware BMU dispatch. Uses missingness-weighted distances when
+`miss_info` is provided and data contains NaN; otherwise uses standard BLAS path.
+"""
+function dispatch_find_bmus(topo::SOMTopology{T}, X::AbstractMatrix{T},
+                            miss_info::Union{Nothing, MissingnessInfo{T}}) where T
+    if miss_info !== nothing
+        find_bmus(topo, X, miss_info)
+    else
+        find_bmus(topo, X)
+    end
+end
+
+"""
     find_bmus_with_distances(topo, X) -> (Vector{Tuple{Int,Int}}, Vector{T})
 
 Find BMUs and their distances for all samples.
@@ -127,3 +168,32 @@ end
 
 find_bmus_with_distances(som::DBGSOM{T}, X::AbstractMatrix{T}) where T =
     find_bmus_with_distances(som.topology, X)
+
+"""
+    find_bmus_with_distances(topo, X, miss_info) -> (Vector{Tuple{Int,Int}}, Vector{T})
+
+Find BMUs and distances using missingness-weighted metric when NaN data is present.
+Falls back to standard BLAS distance when data has no NaN.
+"""
+function find_bmus_with_distances(topo::SOMTopology{T}, X::AbstractMatrix{T},
+                                  miss_info::MissingnessInfo{T}) where T
+    n_samples = size(X, 2)
+    pos_list, W = get_positions_and_weights(topo)
+
+    D = if has_nan(X)
+        pairwise_distances_squared_nan_weighted(Matrix(X), W, miss_info)
+    else
+        pairwise_distances_squared(Matrix(X), W)
+    end
+
+    bmus = Vector{Tuple{Int,Int}}(undef, n_samples)
+    distances = Vector{T}(undef, n_samples)
+
+    @inbounds for i in 1:n_samples
+        idx = find_bmu_idx(view(D, i, :))
+        bmus[i] = pos_list[idx]
+        distances[i] = sqrt(D[i, idx])
+    end
+
+    return bmus, distances
+end

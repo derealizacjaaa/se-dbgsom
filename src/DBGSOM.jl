@@ -92,11 +92,16 @@ export gaussian_neighborhood, compute_neighborhood_matrix
 export compute_sigma, decay_sigma, compute_sigma_range
 
 # BMU functions
-export find_bmu, find_bmus, find_bmus_with_distances
+export find_bmu, find_bmus, find_bmus_with_distances, dispatch_find_bmus
 
 # Update functions
 export update_weights_batch!
 export compute_quantization_error, compute_growth_threshold
+
+# NaN handling
+export MissingnessInfo, compute_missingness_info
+export euclidean_squared_nan_weighted, pairwise_distances_squared_nan_weighted
+export impute_neuron_from_neighbors!, update_weights_batch_nan_impute!
 
 # Growth functions
 export reset_errors!, accumulate_errors!, distribute_errors!
@@ -147,6 +152,7 @@ include("optimization/distance.jl")
 include("optimization/neighborhood.jl")
 include("optimization/bmu.jl")
 include("optimization/batch_update.jl")
+include("optimization/nan_handling.jl")
 
 # Algorithms
 include("algorithms/growth.jl")

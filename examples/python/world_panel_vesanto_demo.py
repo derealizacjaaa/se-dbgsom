@@ -647,12 +647,12 @@ def main():
 
     som = SEDBGSOM(
         bayesian=True,
-        bayesian_trials=40,
+        bayesian_trials=20,
         bayesian_te_constraint=0.30,
         bayesian_ranges={
-            'lambda_': (1, 15),
-            'max_neurons': (80, 120),
-            'n_iter': (200, 300),
+            'lambda_': (2, 6),
+            'max_neurons': (100, 150),
+            'n_iter': (200, 250),
             'init_size': (2, 5),
         },
         random_state=27,
