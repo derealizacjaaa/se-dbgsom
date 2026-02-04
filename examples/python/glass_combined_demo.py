@@ -105,8 +105,8 @@ def main():
     # 2. Train
     print("\n2. Training DBGSOM...")
     som = SEDBGSOM(
-        lambda_=1.75, max_neurons=200, n_iter=250, init_size=(3, 3),
-        random_state=27,
+        lambda_=1, max_neurons=100, n_iter=150, init_size=(2, 2),
+        random_state=19,
     )
     som.fit(df)
     print(f"   Final neurons: {som.n_neurons_}")

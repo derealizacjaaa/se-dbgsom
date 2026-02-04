@@ -7,6 +7,15 @@ import numpy as np
 # Feature transformations for SOM-ready data
 # ---------------------------------------------------------------------------
 
+# Microstates and small jurisdictions (Pop < 1M in 2020) to exclude
+MICROSTATES = [
+    'AS', 'AD', 'AG', 'AW', 'BS', 'BB', 'BZ', 'BM', 'BT', 'VG', 'BN', 'CV',
+    'KY', 'JG', 'KM', 'CW', 'DM', 'FO', 'FJ', 'PF', 'GI', 'GL', 'GD', 'GU',
+    'GY', 'IS', 'IM', 'KI', 'LI', 'LU', 'MO', 'MV', 'MT', 'MH', 'FM', 'MC',
+    'ME', 'NR', 'NC', 'MP', 'PW', 'WS', 'SM', 'ST', 'SC', 'SX', 'SB', 'KN',
+    'LC', 'MF', 'VC', 'SR', 'TO', 'TC', 'TV', 'VU', 'VI'
+]
+
 def _log_rescale(series, target_min=0, target_max=100):
     """
     ln-transform a strictly-positive series, then min-max rescale.
@@ -84,7 +93,7 @@ def transform_features(df):
     df = df.copy()
 
     transforms = {
-        'GDP_per_capita_constant_2015_US': ('log_rescale', lambda s: _log_rescale(s, 0, 200)),
+        'GDP_per_capita_constant_2015_US': ('log_rescale', lambda s: _log_rescale(s, 0, 100)),
         'Inflation_consumer_prices_annual_percent': ('signed_log', _signed_log_rescale),
         'Fertility_rate_total': ('minmax', _minmax_rescale),
     }
@@ -111,7 +120,7 @@ def transform_features(df):
 
 def run_pipeline():
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    input_file = os.path.join(base_dir, 'world_panel_1990_2023.csv')
+    input_file = os.path.join(base_dir, 'world_panel_1980_2023.csv')
     som_ready_file = os.path.join(base_dir, 'world_panel_som_ready.csv')
 
     print("Running World Panel Data Pipeline...")
@@ -141,6 +150,17 @@ def run_pipeline():
     dropped_count = df['Country Name'].nunique() - df_cleaned['Country Name'].nunique()
     print(f"  Dropped {dropped_count} countries.")
     print(f"  Remaining Countries: {df_cleaned['Country Name'].nunique()}")
+
+    # 2b. Filter Microstates
+    print(f"\nStep 1b: Filtering microstates (<1M population)...")
+    print(f"  Removing {len(MICROSTATES)} codes directly.")
+    
+    before_micro = df_cleaned['Country Code'].nunique()
+    df_cleaned = df_cleaned[~df_cleaned['Country Code'].isin(MICROSTATES)].copy()
+    after_micro = df_cleaned['Country Code'].nunique()
+    
+    print(f"  Removed {before_micro - after_micro} microstates.")
+    print(f"  Remaining Countries: {after_micro}")
 
     # 3. Mask R&D Data (Before 2010)
     print("\nStep 2: Masking R&D Expenditure (1990-2009)...")

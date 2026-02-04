@@ -136,9 +136,9 @@ def main():
 
     som = SEDBGSOM(
         lambda_=0.5,
-        max_neurons=120,
-        n_iter=150,
-        init_size=(3, 3),
+        max_neurons=90,
+        n_iter=100,
+        init_size=(2, 2),
         random_state=19,
     )
     som.fit(df)

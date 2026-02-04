@@ -51,58 +51,84 @@ def fetch_indicator_for_countries(code, name, country_codes):
     print(f"Fetching {name} ({code})...")
     data_list = []
     
-    # Process in chunks of 50 countries (API allows semicolon separated)
-    chunks = list(chunk_list(country_codes, 50))
+    # Process in chunks of 20 countries to avoid timeouts/URI length issues
+    chunks = list(chunk_list(country_codes, 20))
     total_chunks = len(chunks)
     
     for i, batch in enumerate(chunks):
         country_str = ';'.join(batch)
-        page = 1
         
-        while True:
-            # Fetch for specific countries
-            url = f"{BASE_URL}/country/{country_str}/indicator/{code}?format=json&per_page=1000&date=1990:2023&page={page}"
+        # Retry logic for the chunk
+        max_retries = 3
+        for attempt in range(max_retries):
+            success = False
+            page = 1
+            chunk_data = [] # Store data for this chunk temporarily
             
-            try:
-                response = requests.get(url, timeout=30)
-                if response.status_code != 200:
-                    print(f"  Error {response.status_code} for chunk {i+1}/{total_chunks}, page {page}")
-                    time.sleep(2)
-                    continue
-                    
-                content = response.json()
+            while True:
+                # Fetch for specific countries
+                url = f"{BASE_URL}/country/{country_str}/indicator/{code}?format=json&per_page=1000&date=1980:2023&page={page}"
                 
-                if not isinstance(content, list) or len(content) < 2:
-                    break
+                try:
+                    response = requests.get(url, timeout=45) # Increased timeout
+                    if response.status_code != 200:
+                        # If 400, it might be a permanent error for this batch configuration, but could be transient
+                        if response.status_code == 400:
+                             print(f"  Error 400 for chunk {i+1}/{total_chunks}, page {page}. Retrying...")
+                             time.sleep(2)
+                             raise Exception("Error 400")
+                        else:
+                             time.sleep(2)
+                             continue # Retry the request loop? No, this is inside while True for pages.
+                             # Actually, if a page fails, we should probably verify if we can retry just that page.
+                             # The current logic was loose. Let's make it stricter.
+                             
+                    content = response.json()
                     
-                metadata = content[0]
-                records = content[1]
-                
-                if not records:
-                    break
+                    if not isinstance(content, list) or len(content) < 2:
+                        success = True # access, end of pages
+                        break
+                        
+                    metadata = content[0]
+                    records = content[1]
                     
-                for item in records:
-                    if item['value'] is not None:
-                        data_list.append({
-                            'Country Code': item['country']['id'],
-                            'Country Name': item['country']['value'],
-                            'Year': int(item['date']),
-                            name: float(item['value'])
-                        })
-                
-                if page >= metadata['pages']:
-                    break
+                    if not records:
+                        success = True
+                        break
+                        
+                    for item in records:
+                        if item['value'] is not None:
+                            chunk_data.append({
+                                'Country Code': item['country']['id'],
+                                'Country Name': item['country']['value'],
+                                'Year': int(item['date']),
+                                name: float(item['value'])
+                            })
                     
-                page += 1
-                
-            except Exception as e:
-                print(f"  Exception for chunk {i+1}: {e}")
-                time.sleep(2)
-                break
+                    if page >= metadata['pages']:
+                        success = True
+                        break
+                        
+                    page += 1
+                    
+                except Exception as e:
+                    print(f"  Exception for chunk {i+1} (Attempt {attempt+1}/{max_retries}): {e}")
+                    time.sleep(2 * (attempt + 1)) # Backoff
+                    break # Break inner while loop to trigger retry of the chunk
+            
+            if success:
+                data_list.extend(chunk_data)
+                break # Move to next chunk
         
-        time.sleep(0.2) # Small delay between chunks
+        time.sleep(0.5) # Delay between chunks
             
     return pd.DataFrame(data_list)
+
+import concurrent.futures
+
+def fetch_indicator_wrapper(args):
+    code, name, countries = args
+    return fetch_indicator_for_countries(code, name, countries)
 
 def main():
     countries = fetch_countries()
@@ -111,15 +137,25 @@ def main():
         return
 
     merged_df = None
+    results = []
     
-    for code, name in INDICATORS.items():
-        # Retry logic for the whole indicator if needed, but chunking is usually robust
-        df_ind = fetch_indicator_for_countries(code, name, countries)
+    # Use ThreadPoolExecutor to fetch indicators in parallel
+    print(f"Fetching {len(INDICATORS)} indicators in parallel...")
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+        futures = [executor.submit(fetch_indicator_wrapper, (code, name, countries)) for code, name in INDICATORS.items()]
         
-        if df_ind.empty:
-            print(f"Warning: No data found for {name}")
-            continue
-            
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                df_ind = future.result()
+                if not df_ind.empty:
+                    results.append(df_ind)
+                else:
+                    print(f"Warning: No data returned for an indicator.")
+            except Exception as e:
+                print(f"An error occurred during fetching: {e}")
+
+    print("Merging datasets...")
+    for df_ind in results:
         if merged_df is None:
             merged_df = df_ind
         else:
@@ -128,7 +164,7 @@ def main():
     if merged_df is not None:
         merged_df.sort_values(by=['Country Name', 'Year'], inplace=True)
         output_dir = os.path.dirname(os.path.abspath(__file__))
-        output_file = os.path.join(output_dir, 'world_panel_1990_2023.csv')
+        output_file = os.path.join(output_dir, 'world_panel_1980_2023.csv')
         
         print(f"Saving dataset to {output_file}...")
         merged_df.to_csv(output_file, index=False)

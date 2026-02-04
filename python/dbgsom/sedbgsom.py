@@ -43,7 +43,7 @@ class SEDBGSOM:
         Number of training iterations.
     init_size : tuple of int, default=(2, 2)
         Initial grid size (width, height).
-    preprocess : bool, default=True
+    preprocess : bool, default=False
         Whether to automatically preprocess input data.
     preprocessor_kwargs : dict, optional
         Additional arguments passed to DataPreprocessor.
@@ -78,7 +78,7 @@ class SEDBGSOM:
         max_neurons: int = 100,
         n_iter: int = 100,
         init_size: Tuple[int, int] = (2, 2),
-        preprocess: bool = True,
+        preprocess: bool = False,
         preprocessor_kwargs: Optional[Dict] = None,
         random_state: Optional[int] = None,
     ):

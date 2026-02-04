@@ -39,8 +39,8 @@ from sklearn.metrics import davies_bouldin_score, silhouette_score
 WINDOW_SIZE = 3
 STEP_SIZE = 2
 
-SNAPSHOT_YEARS = list(range(1990, 2022, 2))  # every even year: 1990, 1992, ..., 2020
-DECADE_YEARS = [1990, 2000, 2010, 2020]
+SNAPSHOT_YEARS = list(range(1980, 2024, 2))  # every even year: 1980, 1982, ..., 2022
+DECADE_YEARS = [1980, 1990, 2000, 2010, 2020]
 
 FEATURE_COLS = [
     'GDP_per_capita_constant_2015_US',
@@ -58,6 +58,9 @@ FEATURE_COLS = [
     'Fertility_rate_total',
     'FDI_net_inflows_percent_of_GDP',
 ]
+
+# City-states/outliers to exclude (too different from typical countries)
+EXCLUDED_COUNTRIES = ['SG', 'HK']  # Singapore, Hong Kong
 
 
 def get_decade(year: int) -> int:
@@ -156,8 +159,8 @@ def _cluster_active_neurons(
     all_positions: List[Tuple],
     all_weights: np.ndarray,
     pos_to_idx: Dict,
-    min_clusters: int = 2,
-    max_clusters: int = 15,
+    min_clusters: int = 8,
+    max_clusters: int = 10,
 ) -> Tuple[Dict, int, Dict, Dict]:
     """
     Vesanto-style Ward clustering on ACTIVE neurons only.
@@ -623,7 +626,7 @@ def main():
     print("Step 1: Loading World Panel Data")
     print("-" * 70)
 
-    df, feature_cols = load_and_prepare_data(data_path)
+    df, feature_cols = load_and_prepare_data(data_path, year_start=1980)
 
     # =========================================================================
     # Step 2: Create Sliding Windows (3 years, step 2, no normalization)
@@ -646,11 +649,12 @@ def main():
     print("-" * 70)
 
     som = SEDBGSOM(
-        lambda_=2,
-        max_neurons=100,
-        n_iter=200,
+        lambda_=1,
+        max_neurons=80,
+        n_iter=150,
         init_size=(2, 2),
-        random_state=19,
+        preprocess=True,
+        random_state=19,  
     )
     som.fit(X)
 

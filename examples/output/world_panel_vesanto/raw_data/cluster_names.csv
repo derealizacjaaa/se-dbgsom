@@ -1,59 +1,47 @@
 decade,cluster_id,cluster_name,gdp_centroid,n_neurons
-1990,1,Least Developed,-1.38,7
-1990,2,Least Developed (2),-1.08,5
-1990,3,Low Income,-0.97,9
-1990,13,Low Income (2),-0.93,3
-1990,11,Lower-Middle Income,-0.38,7
-1990,12,Lower-Middle Income (2),-0.37,3
-1990,10,Middle Income,-0.29,9
-1990,8,Middle Income (2),-0.24,7
-1990,6,Upper-Middle Income,0.13,9
-1990,9,Upper-Middle Income (2),0.67,5
-1990,7,High Income,0.99,9
-1990,4,High Income (2),1.12,6
-1990,5,Advanced Economies,1.62,1
-2000,1,Least Developed,-1.38,7
-2000,2,Least Developed (2),-1.08,5
-2000,3,Least Developed (2),-0.97,9
-2000,7,Low Income,-0.93,3
-2000,5,Low Income (2),-0.38,7
-2000,6,Lower-Middle Income,-0.37,3
-2000,4,Lower-Middle Income (2),-0.35,11
-2000,8,Middle Income,-0.22,5
-2000,14,Middle Income (2),0.06,6
-2000,15,Upper-Middle Income,0.57,15
-2000,9,Upper-Middle Income (2),0.76,6
-2000,13,High Income,1.12,11
-2000,12,High Income (2),1.23,6
-2000,10,Advanced Economies,1.29,1
-2000,11,Advanced Economies (2),1.62,1
-2010,3,Least Developed,-1.37,6
-2010,1,Least Developed (2),-1.08,5
-2010,2,Least Developed (2),-0.97,9
-2010,11,Low Income,-0.71,4
-2010,15,Low Income (2),-0.5,7
-2010,10,Lower-Middle Income,-0.47,5
-2010,12,Lower-Middle Income (2),-0.22,5
-2010,14,Middle Income,-0.15,5
-2010,9,Middle Income (2),0.1,8
-2010,13,Upper-Middle Income,0.32,10
-2010,8,Upper-Middle Income (2),0.76,6
-2010,5,High Income,1.13,10
-2010,4,High Income (2),1.23,6
-2010,6,Advanced Economies,1.29,1
-2010,7,Advanced Economies (2),1.62,1
-2020,2,Least Developed,-1.5,3
-2020,1,Least Developed (2),-1.08,7
-2020,3,Least Developed (2),-0.88,5
-2020,5,Low Income,-0.87,7
-2020,13,Low Income (2),-0.46,3
-2020,4,Lower-Middle Income,-0.4,2
-2020,6,Lower-Middle Income (2),-0.36,6
-2020,12,Middle Income,0.1,3
-2020,14,Middle Income (2),0.24,8
-2020,7,Upper-Middle Income,0.25,2
-2020,10,Upper-Middle Income (2),1.06,8
-2020,8,High Income,1.06,3
-2020,9,High Income (2),1.27,3
-2020,15,Advanced Economies,1.29,1
-2020,11,Advanced Economies (2),1.62,1
+1980,1,Agrarian Developing,-1.42,5
+1980,2,Emerging Agrarian,-1.05,6
+1980,3,Agrarian Developing,-0.99,8
+1980,10,Emerging Economies,-0.4,11
+1980,7,Industrial Industrializing/Transitional,0.0,8
+1980,8,Energy/Industrial Exporters,0.19,6
+1980,9,Transitional Economies,0.41,15
+1980,5,Advanced Economies,0.98,8
+1980,6,Global Trade Hubs,1.33,1
+1980,4,Advanced Service Economies,1.34,6
+1990,2,Agrarian Developing,-1.42,5
+1990,3,Agrarian Developing,-1.05,10
+1990,1,Emerging Agrarian,-0.84,7
+1990,10,Emerging Economies,-0.35,10
+1990,7,Industrial Emerging,-0.34,4
+1990,6,Industrial Industrializing/Transitional,-0.15,2
+1990,9,Transitional Economies,0.06,4
+1990,5,Industrial Industrializing/Transitional,0.43,8
+1990,8,Advanced Service Economies,0.7,11
+1990,4,Global Trade Hubs,1.26,6
+2000,2,Agrarian Developing,-1.14,17
+2000,1,Fragile Economies,-0.98,2
+2000,6,Industrial Emerging,-0.29,6
+2000,9,Transitional Economies,-0.12,5
+2000,10,Emerging Economies,-0.11,12
+2000,7,Energy/Industrial Exporters,0.19,6
+2000,8,Service-based Industrializing/Transitional,0.66,11
+2000,4,Advanced Service Economies,1.18,13
+2000,3,Global Trade Hubs,1.21,4
+2000,5,Service-based Industrializing/Transitional,1.31,1
+2010,2,Agrarian Developing,-1.11,16
+2010,1,Fragile Economies,-0.96,4
+2010,5,Emerging Economies,-0.15,17
+2010,3,Industrial Emerging,0.19,6
+2010,4,Service-based Industrializing/Transitional,0.43,7
+2010,7,Advanced Service Economies,1.18,13
+2010,6,Global Trade Hubs,1.21,4
+2010,8,Service-based Industrializing/Transitional,1.31,1
+2020,2,Agrarian Developing,-1.01,13
+2020,1,Agrarian Developing,-0.98,2
+2020,4,Emerging Economies,-0.18,10
+2020,3,Energy/Industrial Exporters,0.15,3
+2020,6,Service-based Industrializing/Transitional,0.53,5
+2020,8,Industrial Industrializing/Transitional,0.91,5
+2020,5,Global Trade Hubs,1.21,4
+2020,7,Advanced Service Economies,1.47,5
