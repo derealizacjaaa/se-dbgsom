@@ -32,3 +32,17 @@ Thumbs.db
 
 # Claude
 .claude/
+CLAUDE.md
+
+# Output files (keep examples minimal)
+examples/output/**/*.html
+examples/output/**/*.csv
+!examples/output/**/README.md
+
+# Analysis outputs
+cluster_analysis*.txt
+tune_results*.csv
+
+# Large data files
+world_panel/*.csv
+!world_panel/world_panel_som_ready.csv
