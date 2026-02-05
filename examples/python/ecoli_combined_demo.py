@@ -7,9 +7,11 @@ Demonstrates:
 - Vesanto-Alhoniemi hierarchical clustering
 """
 
-import numpy as np
-import pandas as pd
-from pathlib import Path
+# Force-load juliacall to prevent DLL conflicts with NumPy/Pandas on Windows
+try:
+    import juliacall
+except ImportError:
+    pass
 
 from dbgsom import (
     SEDBGSOM,
@@ -18,6 +20,10 @@ from dbgsom import (
 )
 from dbgsom.clustering import SOMVesantoClustering
 from dbgsom.visualization import DBGSOMVisualizer
+
+import numpy as np
+import pandas as pd
+from pathlib import Path
 
 
 def compute_cluster_purities(som, df, y, neuron_labels, target_names):
