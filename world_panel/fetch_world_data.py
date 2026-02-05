@@ -78,10 +78,9 @@ def fetch_indicator_for_countries(code, name, country_codes):
                              time.sleep(2)
                              raise Exception("Error 400")
                         else:
+                             print(f"  Error {response.status_code} for chunk {i+1}/{total_chunks}, page {page}. Retrying...")
                              time.sleep(2)
-                             continue # Retry the request loop? No, this is inside while True for pages.
-                             # Actually, if a page fails, we should probably verify if we can retry just that page.
-                             # The current logic was loose. Let's make it stricter.
+                             raise Exception(f"Error {response.status_code}")
                              
                     content = response.json()
                     

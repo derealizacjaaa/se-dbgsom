@@ -1105,7 +1105,9 @@
 
                     header.append('span').attr('class', 'continent-dot')
                         .style('background', CONTINENT_COLORS[continent]);
-                    header.append('span').attr('class', 'continent-name').text(continent);
+                    header.append('span').attr('class', 'continent-name')
+                        .text(continent)
+                        .style('color', CONTINENT_COLORS[continent]);
                     header.append('span').attr('class', 'continent-count').text(countries.length);
 
                     const list = group.append('div').attr('class', 'country-list');
@@ -1245,7 +1247,9 @@
                     members.forEach(m => {
                         const row = memberList.append('div').attr('class', 'cluster-member');
                         row.append('span').attr('class', 'cluster-member-code').text(m.code);
-                        row.append('span').text(m.name);
+                        row.append('span')
+                            .text(m.name)
+                            .style('color', continentColor(m.code));
                     });
 
                     header.on('click', function () {
