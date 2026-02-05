@@ -144,11 +144,12 @@ def main():
     print("\n2. Training DBGSOM...")
 
     som = SEDBGSOM(
-        lambda_=0.5,
-        max_neurons=90,
-        n_iter=100,
+        lambda_=1,
+        max_neurons=100,
+        n_iter=200,
         init_size=(2, 2),
-        random_state=42,
+        preprocess=True,
+        random_state=19,
     )
     som.fit(df)
 

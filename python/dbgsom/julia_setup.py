@@ -4,9 +4,12 @@ Julia environment setup utilities for DBGSOM.
 Handles lazy loading of Julia and initialization of the BasicDBGSOM module.
 """
 
+import logging
 import os
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
+
+logger = logging.getLogger(__name__)
 
 # Lazy-loaded Julia runtime
 _jl = None
@@ -19,7 +22,7 @@ def get_package_root() -> Path:
     return Path(__file__).parent.parent.parent
 
 
-def get_julia():
+def get_julia() -> Any:
     """
     Lazy-load Julia runtime.
 
@@ -68,7 +71,7 @@ def setup_julia_environment(
     julia_project_path = julia_project_path.replace('\\', '/')
 
     if verbose:
-        print(f"Setting up Julia environment at: {julia_project_path}")
+        logger.info(f"Setting up Julia environment at: {julia_project_path}")
 
     # Check if DBGSOM.jl exists
     basic_path = Path(julia_project_path) / "src" / "DBGSOM.jl"
@@ -85,7 +88,7 @@ def setup_julia_environment(
     # Load the BasicDBGSOM module
     basic_path_str = str(basic_path).replace('\\', '/')
     if verbose:
-        print(f"Loading BasicDBGSOM from: {basic_path_str}")
+        logger.info(f"Loading BasicDBGSOM from: {basic_path_str}")
 
     jl.seval(f'include("{basic_path_str}")')
     jl.seval('using .BasicDBGSOM')
@@ -93,7 +96,7 @@ def setup_julia_environment(
     _julia_ready = True
 
     if verbose:
-        print("Julia environment ready!")
+        logger.info("Julia environment ready!")
 
 
 def is_julia_ready() -> bool:
@@ -114,7 +117,7 @@ def is_julia_ready() -> bool:
         # Try to access BasicDBGSOM
         jl.seval('BasicDBGSOM.DBGSOM')
         return True
-    except Exception:
+    except (AttributeError, RuntimeError, ImportError, NameError):
         _julia_ready = False
         return False
 

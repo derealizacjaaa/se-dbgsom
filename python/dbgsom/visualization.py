@@ -4,10 +4,13 @@ Visualization module for DBGSOM.
 Creates plots and exports raw data for analysis.
 """
 
+import logging
 import numpy as np
 import pandas as pd
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union, Any
+
+logger = logging.getLogger(__name__)
 
 # Try to import matplotlib (optional dependency)
 try:
@@ -180,7 +183,7 @@ class DBGSOMVisualizer:
             class_stats = self.plot_class_distribution(
                 som, X, labels, label_names, filename="clusters.png"
             )
-            print(f"  Neuron purity: {class_stats['pure_neurons']} pure, {class_stats['mixed_neurons']} mixed, {class_stats['empty_neurons']} empty")
+            logger.info(f"Neuron purity: {class_stats['pure_neurons']} pure, {class_stats['mixed_neurons']} mixed, {class_stats['empty_neurons']} empty")
         else:
             self.plot_grid(som)
             self.plot_clusters(som, X)
@@ -195,8 +198,8 @@ class DBGSOMVisualizer:
             som, X, clusters, labels, label_names
         )
 
-        print(f"Output saved to: {self.base_path}")
-        print(f"  Clustering: {n_clusters} clusters (U* matrix)")
+        logger.info(f"Output saved to: {self.base_path}")
+        logger.info(f"Clustering: {n_clusters} clusters (U* matrix)")
 
         # Calculate sample distribution across clusters
         bmus = som.predict(X)
@@ -212,8 +215,8 @@ class DBGSOMVisualizer:
                 lbl = labels[i]
                 cluster_labels[c][lbl] = cluster_labels[c].get(lbl, 0) + 1
 
-        # Print cluster distribution
-        print(f"\n  Cluster distribution:")
+        # Log cluster distribution
+        logger.info("Cluster distribution:")
         for c in sorted(cluster_samples.keys()):
             count = cluster_samples[c]
             pct = count / len(bmus) * 100
@@ -223,9 +226,9 @@ class DBGSOMVisualizer:
                     f"{label_names[lbl]}={cnt}"
                     for lbl, cnt in sorted(cluster_labels[c].items())
                 )
-                print(f"    Cluster {c}: {count} samples ({pct:.1f}%) - {lbl_str}")
+                logger.info(f"  Cluster {c}: {count} samples ({pct:.1f}%) - {lbl_str}")
             else:
-                print(f"    Cluster {c}: {count} samples ({pct:.1f}%)")
+                logger.info(f"  Cluster {c}: {count} samples ({pct:.1f}%)")
 
         # Calculate cluster purity if labels provided
         if labels is not None:
@@ -233,7 +236,7 @@ class DBGSOMVisualizer:
                 max(lbl_counts.values()) for lbl_counts in cluster_labels.values()
             )
             purity = total_correct / len(labels) * 100
-            print(f"\n  Cluster purity: {purity:.1f}%")
+            logger.info(f"Cluster purity: {purity:.1f}%")
 
         return {
             'n_clusters': n_clusters,

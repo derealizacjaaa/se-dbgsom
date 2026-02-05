@@ -5,11 +5,26 @@ Provides metrics to compare clustering quality against ground truth labels.
 """
 
 import numpy as np
-from typing import Dict, List, Tuple, Any
+from typing import Dict, List, Tuple, Any, Protocol, Union
 from collections import defaultdict
 
 
-def silhouette_score_som(som, clusters: Dict[Tuple[int, int], int]) -> float:
+class SOMProtocol(Protocol):
+    """Protocol defining the SOM interface used by metrics."""
+
+    def get_neuron_weights(self) -> Tuple[List[Tuple[int, int]], np.ndarray]:
+        """Return neuron positions and weight vectors."""
+        ...
+
+    def predict(self, X: Any) -> List[Tuple[int, int]]:
+        """Return BMU positions for input data."""
+        ...
+
+
+def silhouette_score_som(
+    som: SOMProtocol,
+    clusters: Dict[Tuple[int, int], int]
+) -> float:
     """
     Compute silhouette score for SOM neuron clustering.
 
@@ -156,12 +171,12 @@ def count_clusters(clusters: Dict[Tuple[int, int], int]) -> int:
 
 
 def compute_all_metrics(
-    som,
+    som: SOMProtocol,
     clusters: Dict[Tuple[int, int], int],
-    X,
+    X: Any,
     true_labels: np.ndarray,
     bmus: List[Tuple[int, int]] = None
-) -> Dict[str, Any]:
+) -> Dict[str, Union[float, int]]:
     """
     Compute all evaluation metrics for a clustering.
 

@@ -1,13 +1,16 @@
-# DBGSOM - Directed Batch Growing Self-Organizing Map
+# DBGSOM
 
-A neural network library for unsupervised learning, clustering, and dimensionality reduction. Extends Kohonen SOMs with intelligent growth mechanisms and directed error distribution.
+Directed Batch Growing Self-Organizing Map with Statistical Error growth threshold.
 
-**Key Innovation**: The network dynamically grows by directing errors from internal neurons to boundary neurons - no need to specify grid dimensions upfront.
+The network dynamically grows neurons on a hexagonal grid by directing quantization errors from internal neurons to boundary neurons.
 
-## Tech Stack
+## Implementations
 
-- **Julia 1.9+** (core): BLAS-optimized SOM algorithm
-- **Python 3.8+** (wrapper): High-level API via JuliaCall, visualization, clustering
+| Language | Location | Dependencies |
+|----------|----------|--------------|
+| Julia | `src/` | Core implementation |
+| Python | `python/` | Wraps Julia via juliacall |
+| R | `R/` | Standalone (no Julia) |
 
 ## Installation
 
@@ -21,94 +24,105 @@ julia --project=. -e 'using Pkg; Pkg.instantiate()'
 
 ```bash
 pip install -e python/
-pip install -e "python/[viz]"  # with matplotlib/seaborn
+pip install -e "python/[viz]"  # matplotlib/seaborn
 ```
 
-## Quick Start (Python)
+### R
+
+```r
+devtools::install("R")
+```
+
+## Usage
+
+### Julia
+
+```julia
+using DBGSOM
+
+som = DBGSOM.BasicDBGSOM(data; lambda=1.5, max_neurons=100)
+DBGSOM.fit!(som, data; epochs=200)
+
+labels = DBGSOM.predict(som, data)
+coords = DBGSOM.transform(som, data)
+```
+
+### Python
 
 ```python
-from dbgsom import SEDBGSOM, cluster_acute, cluster_leiden, cluster_vesanto
+from dbgsom import SEDBGSOM, cluster_vesanto
 
-# Train
 som = SEDBGSOM(lambda_=1.5, max_neurons=100, n_iter=200)
 som.fit(X)
 
-# Cluster (pick one method)
-labels = cluster_acute(som, X)                 # Non-convex shapes (moons, circles)
-labels = cluster_leiden(som, X, n_clusters=3)  # Convex blobs
-labels = cluster_vesanto(som, X)               # Convex, auto-k via Davies-Bouldin
-
-# Get sample-level labels
-from dbgsom import assign_cluster_labels
-sample_labels = assign_cluster_labels(som, X, labels)
+clusters = cluster_vesanto(som, X, n_clusters=3)
+# or auto-detect k:
+clusters = cluster_vesanto(som, X)
 ```
 
-## Quick Start (Julia)
 
-```julia
-using BasicDBGSOM
+## Algorithm
 
-# StatisticalError method (recommended, data-adaptive)
-som = DBGSOM(data; growth_threshold_method=StatisticalError(λ=1.5))
-fit!(som, data; epochs=200)
+Two-phase batch training:
+1. **Coarse (50%)**: Large neighborhood, neuron growth enabled
+2. **Fine (50%)**: Small neighborhood, weight refinement only
 
-# Results
-labels = predict(som, data)        # BMU indices
-coords = transform(som, data)      # 2D coordinates
-```
+**Growth threshold**: `GT = lambda * sqrt(sum(std_i^2))`
 
-> **Note**: Clustering is implemented in Python only. Julia clustering functions are stubs.
+- Lower lambda = more neurons
+- Higher lambda = fewer neurons
 
-## Growth Threshold Methods
+## Vesanto Clustering
 
-| Method | Formula | When to use |
-|--------|---------|-------------|
-| StatisticalError | `GT = λ * sqrt(Σ std_i²)` | Default - adapts to data |
-| SpreadingFactor | `GT = -ln(sf) * d` | Fine-tuned control |
-
-## Clustering Methods
-
-| Method | Best for | Notes |
-|--------|----------|-------|
-| ACUTE | Non-convex (moons, circles) | Voronoi region analysis |
-| Leiden | Convex blobs | Community detection |
-| Vesanto | Convex, unknown k | Auto-selects k via Davies-Bouldin |
+Two-level clustering of SOM prototypes:
+1. Train SOM to produce prototype vectors
+2. Cluster prototypes using Ward's hierarchical or K-means
+3. Auto-select k via Davies-Bouldin (minimize) or silhouette (maximize)
 
 ## Project Structure
 
 ```
-src/                        # Julia core (BasicDBGSOM module)
-├── core/                   # types.jl, topology.jl
-├── optimization/           # distance.jl, neighborhood.jl, bmu.jl, batch_update.jl
-├── algorithms/             # dbgsom.jl, growth.jl
-├── visualization/          # plotting.jl
-└── preprocessing/          # panel.jl (time-series/panel data)
+src/                    Julia core
+├── core/               types.jl, topology.jl
+├── optimization/       distance.jl, neighborhood.jl, bmu.jl, batch_update.jl
+├── algorithms/         dbgsom.jl, growth.jl
+├── visualization/      plotting.jl
+└── preprocessing/      panel.jl
 
-python/dbgsom/              # Python wrapper
-├── sedbgsom.py            # SEDBGSOM class (recommended)
-├── wrapper.py             # DBGSOMWrapper (legacy)
-├── clustering/            # acute.py, leiden.py, vesanto.py, spectral.py
-└── visualization.py       # Matplotlib plotting
+python/dbgsom/          Python wrapper
+├── sedbgsom.py         Main class
+├── wrapper.py          Julia bridge
+├── clustering/         vesanto.py
+└── visualization.py    Plotting
 
-examples/                   # Datasets and demos
-├── data/                  # iris, blobs, circles, two_moons, breast_cancer, etc.
-├── python/                # Python demo scripts
-└── output/                # Pre-generated output plots
+R/R/                    R package
+├── data-structures.R   DBGSOM class (R6)
+├── training.R          fit()
+├── clustering-vesanto.R
+├── visualization.R     plot_umatrix, plot_hit_counts
+└── metrics.R           NMI, ARI, silhouette
 
-world_panel/               # World economic panel data module
+examples/
+├── data/               iris, wine, glass, ecoli, breast_cancer, circles
+├── python/             Demo scripts
+└── R/                  R demos
 ```
 
-## Examples
+## Evaluation Metrics
 
-See `examples/python/` for complete demos on 8 datasets. Each demo trains a DBGSOM, applies clustering, and generates visualizations.
-
-## Two-Phase Training
-
-1. **Coarse (50%)**: Large neighborhood, neuron growth enabled
-2. **Fine (50%)**: Small neighborhood, weight refinement only
+- Silhouette score
+- Normalized Mutual Information (NMI)
+- Adjusted Rand Index (ARI)
+- Purity
 
 ## Dependencies
 
-**Julia** (Project.toml): LinearAlgebra, Statistics, Random, Graphs, CSV, DataFrames, MLJ, LoopVectorization, Plots
+**Julia**: LinearAlgebra, Statistics, Graphs, DataFrames, MLJ, LoopVectorization, Plots
 
-**Python** (pyproject.toml): numpy, pandas, juliacall; optional: matplotlib, seaborn, igraph, leidenalg
+**Python**: numpy, pandas, juliacall; optional: matplotlib, seaborn
+
+**R**: R6, stats, graphics; optional: ggplot2, cluster
+
+## License
+
+MIT

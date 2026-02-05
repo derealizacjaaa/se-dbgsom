@@ -143,7 +143,10 @@ def main():
         plt.tight_layout()
         plt.savefig(viz.plots_path / "k_eval.png")
         plt.close()
-    except Exception: pass
+    except ImportError:
+        print("Skipping K evaluation plot (matplotlib not available)")
+    except (ValueError, KeyError) as e:
+        print(f"Skipping K evaluation plot: {e}")
 
     # 6. Dendrograms
     try:

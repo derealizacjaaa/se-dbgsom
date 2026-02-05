@@ -147,7 +147,10 @@ def main():
         ax[0].plot(sorted(db), [db[k] for k in sorted(db)], 'b-o'); ax[0].set_title('Davies-Bouldin')
         ax[1].plot(sorted(sil), [sil[k] for k in sorted(sil)], 'g-o'); ax[1].set_title('Silhouette')
         plt.tight_layout(); plt.savefig(viz.plots_path / "k_eval.png"); plt.close()
-    except Exception: pass
+    except ImportError:
+        print("Skipping K evaluation plot (matplotlib not available)")
+    except (ValueError, KeyError) as e:
+        print(f"Skipping K evaluation plot: {e}")
 
     # 6. Dendrograms
     try:

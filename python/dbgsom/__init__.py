@@ -3,23 +3,17 @@ SE-DBGSOM - Statistical Error Dynamic Batch Growing Self-Organizing Map.
 
 A two-part workflow:
 1. Training: Use SEDBGSOM (always StatisticalError method)
-2. Clustering: Use cluster_acute(), cluster_leiden(), or cluster_vesanto() separately
+2. Clustering: Use cluster_vesanto() separately
 
 Example
 -------
->>> from dbgsom import SEDBGSOM, cluster_acute, cluster_leiden, cluster_vesanto
+>>> from dbgsom import SEDBGSOM, cluster_vesanto
 >>>
 >>> # Part 1: Train the model
 >>> som = SEDBGSOM(lambda_=1.5, max_neurons=100, n_iter=200)
 >>> som.fit(X)
 >>>
->>> # Part 2a: Cluster with ACUTE (non-convex shapes)
->>> labels = cluster_acute(som, X)
->>>
->>> # Part 2b: Or cluster with Leiden (convex/blob-like)
->>> labels = cluster_leiden(som, X, n_clusters=3)
->>>
->>> # Part 2c: Or cluster with Vesanto (convex, with dendrogram)
+>>> # Part 2: Cluster with Vesanto (with dendrogram)
 >>> labels = cluster_vesanto(som, X)  # auto k via Davies-Bouldin
 >>>
 >>> # Get sample labels
@@ -32,8 +26,6 @@ Legacy API (DBGSOMWrapper) is still available for backwards compatibility.
 # New recommended API
 from .sedbgsom import SEDBGSOM
 from .clustering import (
-    cluster_acute,
-    cluster_leiden,
     cluster_vesanto,
     assign_cluster_labels,
     get_cluster_info,
@@ -43,15 +35,12 @@ from .clustering import (
     ari_score,
     cluster_purity,
     count_clusters,
-    HAS_LEIDEN,
 )
 
 # Legacy API (still supported)
 from .wrapper import DBGSOMWrapper
 from .clustering import (
     SOMSpectralClustering,
-    SOMAcuteClustering,
-    SOMLeidenClustering,
     SOMVesantoClustering,
 )
 
@@ -66,16 +55,12 @@ __all__ = [
     # Recommended API - Training
     "SEDBGSOM",
     # Recommended API - Clustering
-    "cluster_acute",
-    "cluster_leiden",
     "cluster_vesanto",
     "assign_cluster_labels",
     "get_cluster_info",
     # Legacy API
     "DBGSOMWrapper",
     "SOMSpectralClustering",
-    "SOMAcuteClustering",
-    "SOMLeidenClustering",
     "SOMVesantoClustering",
     # Visualization
     "DBGSOMVisualizer",
@@ -91,7 +76,6 @@ __all__ = [
     "ari_score",
     "cluster_purity",
     "count_clusters",
-    "HAS_LEIDEN",
     # Setup functions
     "setup_julia_environment",
     "is_julia_ready",

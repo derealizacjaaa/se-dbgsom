@@ -26,9 +26,8 @@ class SEDBGSOM:
     Always uses the StatisticalError growth threshold method which adapts
     to data statistics: GT = λ × sqrt(Σ std_i²)
 
-    For clustering, use the separate clustering functions:
-    - cluster_acute(som, X) - for non-convex/complex boundaries
-    - cluster_leiden(som, X) - for convex/blob-like clusters
+    For clustering, use the separate clustering function:
+    - cluster_vesanto(som, X) - for convex clusters with dendrogram
 
     Parameters
     ----------
@@ -59,17 +58,14 @@ class SEDBGSOM:
 
     Examples
     --------
-    >>> from dbgsom import SEDBGSOM, cluster_acute, cluster_leiden
+    >>> from dbgsom import SEDBGSOM, cluster_vesanto
     >>>
     >>> # Train model
     >>> som = SEDBGSOM(lambda_=1.5, max_neurons=100, n_iter=200)
     >>> som.fit(X)
     >>>
-    >>> # Cluster with ACUTE (good for non-convex shapes)
-    >>> labels = cluster_acute(som, X)
-    >>>
-    >>> # Or cluster with Leiden (good for blob-like clusters)
-    >>> labels = cluster_leiden(som, X, n_clusters=3)
+    >>> # Cluster with Vesanto (with dendrogram visualization)
+    >>> labels = cluster_vesanto(som, X)
     """
 
     def __init__(

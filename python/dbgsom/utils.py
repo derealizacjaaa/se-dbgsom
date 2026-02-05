@@ -45,11 +45,6 @@ def julia_to_numpy_matrix(jl_matrix: Any) -> np.ndarray:
     return np.array(jl_matrix, dtype=np.float64)
 
 
-def julia_tuple_to_python(jl_tuple: Any) -> Tuple[int, int]:
-    """Convert Julia tuple to Python tuple."""
-    return (int(jl_tuple[0]), int(jl_tuple[1]))
-
-
 def julia_dict_to_python(
     jl_dict: Any,
     value_type: str = 'float'
