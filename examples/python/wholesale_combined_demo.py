@@ -1,5 +1,5 @@
 """
-Seeds Dataset Demo - Combined Hexagonal DBGSOM + Vesanto Clustering
+Wholesale Customers Dataset Demo - Combined Hexagonal DBGSOM + Vesanto Clustering
 
 Demonstrates:
 - DBGSOM training with StatisticalError growth threshold
@@ -9,8 +9,8 @@ Demonstrates:
 - Two dendrograms: optimal k vs true k, annotated with cluster purity and ARI
 
 Dataset:
-  UCI Seeds Dataset - measurements of wheat kernel geometry
-  210 samples, 7 features, 3 classes (Kama, Rosa, Canadian wheat varieties)
+  UCI Wholesale Customers Dataset - annual spending on product categories
+  220 samples, 6 features, 2 classes (HoReCa vs Retail channel)
 
 References:
   Vasighi & Amini (2017) - DBGSOM algorithm
@@ -30,16 +30,16 @@ from dbgsom.clustering import SOMVesantoClustering
 from dbgsom.visualization import DBGSOMVisualizer
 
 
-def load_seeds_data():
-    """Load seeds dataset from CSV."""
-    data_path = Path(__file__).parent.parent / "data" / "seeds.csv"
+def load_wholesale_data():
+    """Load wholesale customers dataset from CSV."""
+    data_path = Path(__file__).parent.parent / "data" / "wholesale.csv"
     df = pd.read_csv(data_path)
 
     feature_cols = [c for c in df.columns if c != 'target']
     X = df[feature_cols].values
     y = df['target'].values
     feature_names = feature_cols
-    target_names = ['Kama', 'Rosa', 'Canadian']
+    target_names = ['Retail', 'HoReCa']
 
     return X, y, feature_names, target_names
 
@@ -123,14 +123,14 @@ def plot_dendrogram_with_purity(
 
 def main():
     print("=" * 70)
-    print("  Combined DBGSOM Demo: Seeds Dataset")
+    print("  Combined DBGSOM Demo: Wholesale Customers Dataset")
     print("=" * 70)
 
     # =========================================================================
     # 1. Load and prepare data
     # =========================================================================
-    print("\n1. Loading Seeds dataset...")
-    X, y, feature_names, target_names = load_seeds_data()
+    print("\n1. Loading Wholesale Customers dataset...")
+    X, y, feature_names, target_names = load_wholesale_data()
 
     print(f"   Samples: {X.shape[0]}")
     print(f"   Features: {X.shape[1]} - {feature_names}")
@@ -145,11 +145,10 @@ def main():
 
     som = SEDBGSOM(
         lambda_=0.5,
-        max_neurons=100,
-        n_iter=150,
+        max_neurons=90,
+        n_iter=100,
         init_size=(2, 2),
-        preprocess=True,
-        random_state=19,
+        random_state=42,
     )
     som.fit(df)
 
@@ -168,17 +167,17 @@ def main():
     labels_auto = clustering_auto.fit(som, df)
     k_auto = clustering_auto.n_clusters_
 
-    clustering_k3 = SOMVesantoClustering(method='ward')
-    labels_k3 = clustering_k3.fit(som, df, n_clusters=3)
+    clustering_k2 = SOMVesantoClustering(method='ward')
+    labels_k2 = clustering_k2.fit(som, df, n_clusters=2)
 
     bmus = som.predict(df)
     metrics_auto = compute_all_metrics(som, labels_auto, df, y, bmus)
-    metrics_k3 = compute_all_metrics(som, labels_k3, df, y, bmus)
+    metrics_k2 = compute_all_metrics(som, labels_k2, df, y, bmus)
 
     print(f"\n   {'Method':<30} {'k':>3}  {'NMI':>6}  {'ARI':>6}  {'Purity':>7}")
     print("   " + "-" * 56)
     print(f"   {'Vesanto (auto k, DB)':<30} {k_auto:>3}  {metrics_auto['nmi']:>6.3f}  {metrics_auto['ari']:>6.3f}  {metrics_auto['purity']:>7.3f}")
-    print(f"   {'Vesanto (true k=3)':<30} {3:>3}  {metrics_k3['nmi']:>6.3f}  {metrics_k3['ari']:>6.3f}  {metrics_k3['purity']:>7.3f}")
+    print(f"   {'Vesanto (true k=2)':<30} {2:>3}  {metrics_k2['nmi']:>6.3f}  {metrics_k2['ari']:>6.3f}  {metrics_k2['purity']:>7.3f}")
     print("   " + "-" * 56)
 
     # =========================================================================
@@ -187,7 +186,7 @@ def main():
     print("\n4. Creating SOM visualizations...")
 
     output_dir = Path(__file__).parent.parent / "output"
-    viz = DBGSOMVisualizer(output_dir, "seeds_combined")
+    viz = DBGSOMVisualizer(output_dir, "wholesale_combined")
 
     if viz.raw_data_path.exists() and not any(viz.raw_data_path.iterdir()):
         viz.raw_data_path.rmdir()
@@ -260,12 +259,12 @@ def main():
     purity_auto, ari_auto, per_cluster_auto = compute_cluster_purities(
         som, df, y, labels_auto, target_names
     )
-    purity_k3, ari_k3, per_cluster_k3 = compute_cluster_purities(
-        som, df, y, labels_k3, target_names
+    purity_k2, ari_k2, per_cluster_k2 = compute_cluster_purities(
+        som, df, y, labels_k2, target_names
     )
 
     linkage_auto = clustering_auto.get_dendrogram_data()
-    linkage_k3 = clustering_k3.get_dendrogram_data()
+    linkage_k2 = clustering_k2.get_dendrogram_data()
 
     try:
         import matplotlib.pyplot as plt
@@ -284,19 +283,19 @@ def main():
             plt.close()
             print("   Saved: vesanto_dendrogram_optimal_k.png")
 
-        if linkage_k3 is not None:
+        if linkage_k2 is not None:
             fig, ax = plt.subplots(figsize=(10, 6))
             plot_dendrogram_with_purity(
-                ax, linkage_k3, 3,
-                purity_k3, ari_k3, per_cluster_k3,
-                "Vesanto Dendrogram (True k=3)"
+                ax, linkage_k2, 2,
+                purity_k2, ari_k2, per_cluster_k2,
+                "Vesanto Dendrogram (True k=2)"
             )
             plt.tight_layout()
             plt.savefig(plots_dir / "vesanto_dendrogram_true_k.png", dpi=150)
             plt.close()
             print("   Saved: vesanto_dendrogram_true_k.png")
 
-        if linkage_auto is None and linkage_k3 is None:
+        if linkage_auto is None and linkage_k2 is None:
             print("   Skipped dendrograms (linkage matrix not available)")
 
     except ImportError as e:
@@ -305,10 +304,10 @@ def main():
     # =========================================================================
     # 7. Console summary
     # =========================================================================
-    print("\n7. Cluster purity analysis (Vesanto k=3 vs true labels)...")
+    print("\n7. Cluster purity analysis (Vesanto k=2 vs true labels)...")
 
-    sample_clusters = assign_cluster_labels(som, df, labels_k3)
-    cluster_ids = sorted(set(labels_k3.values()))
+    sample_clusters = assign_cluster_labels(som, df, labels_k2)
+    cluster_ids = sorted(set(labels_k2.values()))
 
     header = f"   {'Class':<15}" + "".join(f"{'Cluster ' + str(c):>12}" for c in cluster_ids) + f"{'Dominant':>10}"
     print(f"\n{header}")
@@ -323,12 +322,12 @@ def main():
         print(row)
 
     print(f"\n   Overall purity (auto k={k_auto}): {purity_auto:.3f}")
-    print(f"   Overall purity (true k=3):     {purity_k3:.3f}")
+    print(f"   Overall purity (true k=2):     {purity_k2:.3f}")
     print(f"   ARI (auto k={k_auto}):            {ari_auto:.3f}")
-    print(f"   ARI (true k=3):               {ari_k3:.3f}")
+    print(f"   ARI (true k=2):               {ari_k2:.3f}")
 
     print("\n" + "=" * 70)
-    print("  Demo complete! Check examples/output/seeds_combined/ for plots.")
+    print("  Demo complete! Check examples/output/wholesale_combined/ for plots.")
     print("=" * 70)
 
 
