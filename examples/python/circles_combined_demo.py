@@ -83,7 +83,7 @@ def main():
     # 2. Train
     print("\n2. Training DBGSOM...")
     som = SEDBGSOM(
-        lambda_=1.5, max_neurons=130, n_iter=200, init_size=(3, 3),
+        lambda_=2, max_neurons=250, n_iter=150, init_size=(2, 2),
         random_state=42,
     )
     som.fit(df)

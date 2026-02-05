@@ -93,7 +93,7 @@ def main():
     print("\n2. Training DBGSOM...")
     som = SEDBGSOM(
         lambda_=3, max_neurons=70, n_iter=250, init_size=(2, 2),
-        preprocess=True
+        preprocess=True,
         random_state=19,
     )
     som.fit(df)
@@ -137,10 +137,12 @@ def main():
     try:
         import matplotlib.pyplot as plt
         db, sil = clustering_auto.get_k_evaluation_profile()
-        fig, ax = plt.subplots(1, 2, figsize=(12, 4))
-        ax[0].plot(sorted(db), [db[k] for k in sorted(db)], 'b-o'); ax[0].set_title('Davies-Bouldin')
-        ax[1].plot(sorted(sil), [sil[k] for k in sorted(sil)], 'g-o'); ax[1].set_title('Silhouette')
-        plt.tight_layout(); plt.savefig(viz.plots_path / "k_eval.png"); plt.close()
+        fig, ax = plt.subplots(figsize=(6, 4))
+        ax.plot(sorted(sil), [sil[k] for k in sorted(sil)], 'g-o')
+        ax.set_title('Silhouette Score')
+        plt.tight_layout()
+        plt.savefig(viz.plots_path / "k_eval.png")
+        plt.close()
     except Exception: pass
 
     # 6. Dendrograms

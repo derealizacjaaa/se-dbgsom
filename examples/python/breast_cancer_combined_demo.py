@@ -132,9 +132,10 @@ def main():
     som = SEDBGSOM(
         lambda_=0.5,
         max_neurons=150,
-        n_iter=150,
+        n_iter=200,
         init_size=(3, 3),
         random_state=19,
+        preprocess=True
     )
     som.fit(df)
 
