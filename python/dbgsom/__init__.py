@@ -39,10 +39,7 @@ from .clustering import (
 
 # Legacy API (still supported)
 from .wrapper import DBGSOMWrapper
-from .clustering import (
-    SOMSpectralClustering,
-    SOMVesantoClustering,
-)
+from .clustering import SOMVesantoClustering
 
 # Shared utilities
 from .preprocessor import DataPreprocessor, ColumnType, NormalizationMethod
@@ -60,7 +57,6 @@ __all__ = [
     "get_cluster_info",
     # Legacy API
     "DBGSOMWrapper",
-    "SOMSpectralClustering",
     "SOMVesantoClustering",
     # Visualization
     "DBGSOMVisualizer",

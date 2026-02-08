@@ -10,7 +10,6 @@ DBGSOM (Directed Batch Growing Self-Organizing Map) is a multi-language project:
 |----------|----------|---------|
 | Julia | `src/` | Core algorithm implementation |
 | Python | `python/dbgsom/` | Python wrapper via juliacall |
-| R | `R/` | Standalone R implementation |
 
 ## Environment Setup
 
@@ -18,7 +17,6 @@ DBGSOM (Directed Batch Growing Self-Organizing Map) is a multi-language project:
 
 - **Julia**: 1.9+ (1.10 or 1.11 recommended)
 - **Python**: 3.8+
-- **R**: 4.0+ (optional)
 
 ### Julia Setup
 
@@ -51,13 +49,6 @@ pip install -e "python/[dev]"
 pip install -e "python/[dev,viz]"
 ```
 
-### R Setup
-
-```r
-# Install R package
-devtools::install("R")
-```
-
 ## Dependencies
 
 ### Julia (Project.toml)
@@ -72,6 +63,9 @@ devtools::install("R")
 | MLJ | 0.22+ | ML integration |
 | Plots | 1.x | Visualization |
 | CSV | 0.10+ | File I/O |
+| JSON | 0.21.4+ | JSON serialization |
+| StaticArrays | 1.6+ | Fixed-size arrays |
+| StateSpaceModels | 0.7.0+ | Time series models |
 
 ### Python (pyproject.toml)
 
@@ -112,10 +106,11 @@ src/                        # Julia core
 └── preprocessing/         # Panel data handling
 
 python/dbgsom/             # Python wrapper
-├── __init__.py            # Public API exports
+├── __init__.py            # Public API exports (v0.2.0)
 ├── sedbgsom.py            # SEDBGSOM class (recommended)
 ├── wrapper.py             # Legacy DBGSOMWrapper
 ├── clustering/            # Clustering algorithms
+│   ├── __init__.py        # Clustering exports
 │   ├── api.py             # High-level functions
 │   ├── vesanto.py         # Vesanto-Alhoniemi method
 │   └── metrics.py         # Evaluation metrics
@@ -123,6 +118,31 @@ python/dbgsom/             # Python wrapper
 ├── preprocessor.py        # Data preprocessing
 ├── julia_setup.py         # Julia environment setup
 └── utils.py               # Julia-Python data conversion
+
+test/                      # Julia tests
+├── runtests.jl            # Test runner
+├── test_nan_handling.jl   # NaN handling tests
+└── test_qe_te.jl          # QE/TE metric tests
+
+examples/                  # Demo scripts
+├── data/                  # Sample datasets
+│   ├── iris.csv
+│   ├── wine.csv
+│   ├── glass.csv
+│   ├── ecoli.csv
+│   ├── breast_cancer.csv
+│   ├── circles.csv
+│   └── wholesale.csv
+├── output/                # Generated plots
+└── python/                # Python demos
+    ├── iris_combined_demo.py
+    ├── wine_combined_demo.py
+    ├── circles_combined_demo.py
+    ├── ecoli_combined_demo.py
+    ├── breast_cancer_combined_demo.py
+    ├── wholesale_combined_demo.py
+    ├── world_panel_vesanto_demo.py
+    └── plot_circles_data.py
 ```
 
 ### 3. API Guidelines
@@ -130,14 +150,15 @@ python/dbgsom/             # Python wrapper
 #### Recommended API (New Code)
 
 ```python
-from dbgsom import SEDBGSOM, cluster_vesanto
+from dbgsom import SEDBGSOM, cluster_vesanto, assign_cluster_labels
 
 # Training
 som = SEDBGSOM(lambda_=1.5, max_neurons=100, n_iter=200)
 som.fit(X)
 
 # Clustering (separate step)
-labels = cluster_vesanto(som, X)   # With dendrogram
+neuron_labels = cluster_vesanto(som, X)   # With dendrogram
+sample_labels = assign_cluster_labels(som, X, neuron_labels)
 ```
 
 #### Legacy API (Still Supported)
@@ -155,37 +176,25 @@ clusters = som.cluster(df)
 ### Running Tests
 
 ```bash
-# Python tests
-cd python
-pytest tests/ -v
-
-# With coverage
-pytest tests/ --cov=dbgsom --cov-report=html
-
 # Julia tests
 julia --project=. -e 'using Pkg; Pkg.test()'
-```
 
-### Test Structure
-
-```
-python/tests/
-├── test_sedbgsom.py       # SEDBGSOM class tests
-├── test_clustering.py     # Clustering algorithm tests
-├── test_visualization.py  # Visualization tests
-└── test_metrics.py        # Metrics calculation tests
+# Python examples (no formal test suite yet)
+python examples/python/iris_combined_demo.py
+python examples/python/wine_combined_demo.py
 ```
 
 ### Running Examples
 
 ```bash
-# Python demos
+# All Python demos
 python examples/python/iris_combined_demo.py
 python examples/python/wine_combined_demo.py
 python examples/python/circles_combined_demo.py
-
-# R demos
-Rscript examples/R/iris_demo.R
+python examples/python/ecoli_combined_demo.py
+python examples/python/breast_cancer_combined_demo.py
+python examples/python/wholesale_combined_demo.py
+python examples/python/world_panel_vesanto_demo.py
 ```
 
 ## Code Style

@@ -10,7 +10,6 @@ The network dynamically grows neurons on a hexagonal grid by directing quantizat
 |----------|----------|--------------|
 | Julia | `src/` | Core implementation |
 | Python | `python/` | Wraps Julia via juliacall |
-| R | `R/` | Standalone (no Julia) |
 
 ## Installation
 
@@ -25,12 +24,6 @@ julia --project=. -e 'using Pkg; Pkg.instantiate()'
 ```bash
 pip install -e python/
 pip install -e "python/[viz]"  # matplotlib/seaborn
-```
-
-### R
-
-```r
-devtools::install("R")
 ```
 
 ## Usage
@@ -50,14 +43,15 @@ coords = DBGSOM.transform(som, data)
 ### Python
 
 ```python
-from dbgsom import SEDBGSOM, cluster_vesanto
+from dbgsom import SEDBGSOM, cluster_vesanto, assign_cluster_labels
 
 som = SEDBGSOM(lambda_=1.5, max_neurons=100, n_iter=200)
 som.fit(X)
 
-clusters = cluster_vesanto(som, X, n_clusters=3)
+neuron_labels = cluster_vesanto(som, X, n_clusters=3)
+sample_labels = assign_cluster_labels(som, X, neuron_labels)
 # or auto-detect k:
-clusters = cluster_vesanto(som, X)
+neuron_labels = cluster_vesanto(som, X)
 ```
 
 
@@ -91,21 +85,13 @@ src/                    Julia core
 
 python/dbgsom/          Python wrapper
 ├── sedbgsom.py         Main class
-├── wrapper.py          Julia bridge
-├── clustering/         vesanto.py
+├── wrapper.py          Julia bridge (legacy)
+├── clustering/         vesanto.py, api.py, metrics.py
 └── visualization.py    Plotting
 
-R/R/                    R package
-├── data-structures.R   DBGSOM class (R6)
-├── training.R          fit()
-├── clustering-vesanto.R
-├── visualization.R     plot_umatrix, plot_hit_counts
-└── metrics.R           NMI, ARI, silhouette
-
 examples/
-├── data/               iris, wine, glass, ecoli, breast_cancer, circles
-├── python/             Demo scripts
-└── R/                  R demos
+├── data/               iris, wine, glass, ecoli, breast_cancer, circles, wholesale
+└── python/             Demo scripts
 ```
 
 ## Evaluation Metrics
@@ -120,8 +106,6 @@ examples/
 **Julia**: LinearAlgebra, Statistics, Graphs, DataFrames, MLJ, LoopVectorization, Plots
 
 **Python**: numpy, pandas, juliacall; optional: matplotlib, seaborn
-
-**R**: R6, stats, graphics; optional: ggplot2, cluster
 
 ## License
 

@@ -96,20 +96,21 @@ viz.plot_expanded_umatrix(som)
 ```python
 from pathlib import Path
 import pandas as pd
+from dbgsom import SEDBGSOM, cluster_vesanto, assign_cluster_labels
 
 datasets = ['iris', 'wine', 'glass']
 results = []
 
 for name in datasets:
-    df = pd.read_csv(f'data/{name}.csv')
+    df = pd.read_csv(f'examples/data/{name}.csv')
     X = df.drop('target', axis=1)
     y = df['target'].values
 
     som = SEDBGSOM(lambda_=1.0, max_neurons=100, n_iter=200)
     som.fit(X)
 
-    labels = cluster_vesanto(som, X)
-    sample_labels = assign_cluster_labels(som, X, labels)
+    neuron_labels = cluster_vesanto(som, X)
+    sample_labels = assign_cluster_labels(som, X, neuron_labels)
 
     results.append({
         'dataset': name,
@@ -215,6 +216,9 @@ som.fit(X_sample)
 3. Try different k values
 
 ```python
+import numpy as np
+from dbgsom import SEDBGSOM, cluster_vesanto, assign_cluster_labels, compute_all_metrics
+
 # 1. Check for NaN/Inf
 print(f"NaN values: {np.isnan(X).sum()}")
 print(f"Inf values: {np.isinf(X).sum()}")
@@ -226,12 +230,10 @@ for lam in [0.5, 1.0, 1.5, 2.0]:
     print(f"lambda={lam}: {som.n_neurons_} neurons")
 
 # 3. Evaluate clustering
-from dbgsom import compute_all_metrics, cluster_vesanto
-
-labels = cluster_vesanto(som, X)
-sample_labels = assign_cluster_labels(som, X, labels)
+neuron_labels = cluster_vesanto(som, X)
+sample_labels = assign_cluster_labels(som, X, neuron_labels)
 bmus = som.predict(X)
-metrics = compute_all_metrics(som, labels, X, y_true, bmus)
+metrics = compute_all_metrics(som, neuron_labels, X, y_true, bmus)
 print(f"NMI={metrics['nmi']:.3f}, ARI={metrics['ari']:.3f}")
 ```
 
@@ -325,5 +327,5 @@ pip install -e "python/[dev,viz]"
 
 For issues not covered here:
 1. Check GitHub Issues
-2. Review example scripts in `examples/`
+2. Review example scripts in `examples/python/`
 3. Open a new issue with reproduction steps

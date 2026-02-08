@@ -20,7 +20,6 @@ Example
 >>> metrics = compute_all_metrics(som, labels, X, true_labels)
 """
 
-from .spectral import SOMSpectralClustering
 from .vesanto import SOMVesantoClustering
 from .metrics import (
     compute_all_metrics,
@@ -44,7 +43,6 @@ __all__ = [
     "assign_cluster_labels",
     "get_cluster_info",
     # Low-level classes
-    "SOMSpectralClustering",
     "SOMVesantoClustering",
     # Metrics
     "compute_all_metrics",

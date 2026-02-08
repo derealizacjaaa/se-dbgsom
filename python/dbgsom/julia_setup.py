@@ -5,7 +5,6 @@ Handles lazy loading of Julia and initialization of the BasicDBGSOM module.
 """
 
 import logging
-import os
 from pathlib import Path
 from typing import Any, Optional
 

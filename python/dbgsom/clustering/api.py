@@ -15,15 +15,17 @@ Usage:
 """
 
 import numpy as np
-import pandas as pd
-from typing import Dict, Tuple, Optional, Union
+from typing import TYPE_CHECKING, Dict, Tuple, Optional, Union
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 from .vesanto import SOMVesantoClustering
 
 
 def cluster_vesanto(
     som,
-    X: Optional[Union[pd.DataFrame, np.ndarray]] = None,
+    X: Optional[Union["pd.DataFrame", np.ndarray]] = None,
     n_clusters: Optional[int] = None,
     method: str = 'ward',
     auto_k_method: str = 'davies_bouldin',
@@ -96,7 +98,7 @@ def cluster_vesanto(
 
 def assign_cluster_labels(
     som,
-    X: Union[pd.DataFrame, np.ndarray],
+    X: Union["pd.DataFrame", np.ndarray],
     neuron_labels: Dict[Tuple[int, int], int]
 ) -> np.ndarray:
     """
@@ -128,7 +130,7 @@ def assign_cluster_labels(
 
 def get_cluster_info(
     som,
-    X: Union[pd.DataFrame, np.ndarray],
+    X: Union["pd.DataFrame", np.ndarray],
     neuron_labels: Dict[Tuple[int, int], int]
 ) -> Dict[int, Dict]:
     """
