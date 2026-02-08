@@ -1,0 +1,33 @@
+Package: dbgsom
+Title: Directed Batch Growing Self-Organizing Map
+Version: 0.1.0
+Authors@R: person("DBGSOM", "Authors", email = "dbgsom@example.com", role = c("aut", "cre"))
+Description: R implementation of the Directed Batch Growing Self-Organizing Map
+    (DBGSOM) algorithm based on Vasighi & Amini (2017). Features dynamic hexagonal
+    grid growth, NA-aware training, Vesanto two-level clustering, and pooled
+    cross-sectional data preprocessing.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.0
+Imports:
+    stats,
+    cluster
+Suggests:
+    testthat (>= 3.0.0),
+    mclust
+Config/testthat/edition: 3
+Collate:
+    'utils.R'
+    'topology.R'
+    'distance.R'
+    'neighborhood.R'
+    'bmu.R'
+    'nan_handling.R'
+    'batch_update.R'
+    'growth.R'
+    'dbgsom.R'
+    'plotting.R'
+    'clustering.R'
+    'metrics.R'
+    'pooled.R'

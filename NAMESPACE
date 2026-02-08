@@ -1,0 +1,51 @@
+# Generated manually for dbgsom package
+
+# Main constructor and methods
+export(dbgsom)
+export(fit.dbgsom)
+export(predict.dbgsom)
+export(transform.dbgsom)
+
+# Growth threshold methods
+export(spreading_factor)
+export(statistical_error)
+
+# Topology
+export(get_neighbors_hex)
+export(grid_distance_hex)
+export(is_boundary)
+export(grid_bounds)
+
+# Visualization
+export(compute_umatrix)
+export(compute_expanded_umatrix)
+export(compute_ustar_matrix)
+export(compute_component_planes)
+export(compute_hit_counts)
+export(compute_topology_edges)
+export(get_plotting_data)
+export(format_grid_ascii)
+export(format_summary)
+
+# Quality metrics
+export(compute_quantization_error)
+export(compute_topographic_error)
+
+# Clustering
+export(vesanto_clustering)
+export(assign_cluster_labels)
+
+# Clustering evaluation metrics
+export(cluster_purity)
+
+# Pooled model
+export(pooled_prepare)
+
+# S3 methods
+S3method(fit, dbgsom)
+S3method(predict, dbgsom)
+S3method(transform, dbgsom)
+S3method(print, dbgsom)
+
+importFrom(stats, dist, hclust, cutree, kmeans, sd, quantile, rnorm, setNames)
+importFrom(cluster, silhouette)
