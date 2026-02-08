@@ -16,8 +16,6 @@ logger = logging.getLogger(__name__)
 try:
     import matplotlib.pyplot as plt
     import matplotlib.patches as mpatches
-    from matplotlib.colors import Normalize
-    from matplotlib.cm import ScalarMappable
     HAS_MATPLOTLIB = True
 except ImportError:
     HAS_MATPLOTLIB = False
@@ -745,7 +743,7 @@ class DBGSOMVisualizer:
         colors = [clusters[p] for p in positions]
 
         n_clusters = len(set(colors))
-        scatter = ax.scatter(
+        ax.scatter(
             xs, ys, s=300, c=colors, cmap='tab10',
             edgecolors='white', linewidths=1.5, alpha=0.9
         )
