@@ -16,7 +16,7 @@ Two methods are available for controlling network growth:
 
 # Quick Start
 ```julia
-using BasicDBGSOM
+using DBGSOM
 
 # Method 1: Using spreading factor (original approach)
 som = DBGSOM{Float64}(
@@ -55,7 +55,7 @@ coords = transform(som, X)  # 2 × n_samples coordinates
 Reference: Vasighi & Amini (2017), "A directed batch growing approach to enhance
 the topology preservation of self-organizing map"
 """
-module BasicDBGSOM
+module DBGSOM
 
 using LinearAlgebra
 using Statistics
@@ -119,10 +119,6 @@ export compute_hit_counts, compute_topology_edges, get_plotting_data
 export to_matrix, to_coordinate_arrays, to_edge_segments
 export format_grid_ascii, format_umatrix_ascii, format_summary
 export cluster_neurons_umatrix
-
-# Clustering methods (ACUTE and Leiden)
-export SOMAcuteClustering, cluster_neurons_acute
-export SOMLeidenClustering, cluster_neurons_leiden, find_resolution_for_k
 
 # Quality metrics
 export find_two_bmus, geodesic_distance
